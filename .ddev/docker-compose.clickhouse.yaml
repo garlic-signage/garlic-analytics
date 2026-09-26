@@ -9,6 +9,9 @@ services:
       CLICKHOUSE_DB: analytics
       CLICKHOUSE_USER: analytics
       CLICKHOUSE_PASSWORD: analytics
+      VIRTUAL_HOST: ${DDEV_HOSTNAME}
+      HTTP_EXPOSE: "8124:8123"
+      HTTPS_EXPOSE: "8123:8123"
     volumes:
       - clickhouse:/var/lib/clickhouse
       - ../schema:/docker-entrypoint-initdb.d

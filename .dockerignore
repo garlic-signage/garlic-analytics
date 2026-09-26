@@ -1,0 +1,5 @@
+.ddev/
+var/
+public/var/
+tests/
+misc/
