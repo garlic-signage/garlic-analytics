@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace App\Framework\Database\Migration;
 
 use App\Framework\Database\ClickHouseClientInterface;
+use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
@@ -38,7 +39,13 @@ class SchemaMigratorTest extends TestCase
 
     protected function tearDown(): void
     {
-        array_map('unlink', glob($this->dir . '/*') ?: []);
+        $files = glob($this->dir . '/*');
+        if ($files !== false)
+        {
+            foreach ($files as $file)
+                unlink($file);
+        }
+
         rmdir($this->dir);
     }
 
@@ -50,17 +57,18 @@ class SchemaMigratorTest extends TestCase
 
         $client = new class implements ClickHouseClientInterface
         {
+            /** @var list<string> */
             public array $statements = [];
             public function execute(string $sql): void { $this->statements[] = $sql; }
         };
 
-        $executed = (new SchemaMigrator($client, $this->dir))->migrate();
+        $executed = new SchemaMigrator($client, $this->dir)->migrate();
 
-        $this->assertSame(['01_first.sql', '02_second.sql'], $executed);
-        $this->assertCount(3, $client->statements);
-        $this->assertStringContainsString('TABLE IF NOT EXISTS a', $client->statements[0]);
-        $this->assertStringContainsString('TABLE IF NOT EXISTS c', $client->statements[1]);
-        $this->assertStringContainsString('TABLE IF NOT EXISTS b', $client->statements[2]);
+        Assert::assertSame(['01_first.sql', '02_second.sql'], $executed);
+        Assert::assertCount(3, $client->statements);
+        Assert::assertStringContainsString('TABLE IF NOT EXISTS a', $client->statements[0]);
+        Assert::assertStringContainsString('TABLE IF NOT EXISTS c', $client->statements[1]);
+        Assert::assertStringContainsString('TABLE IF NOT EXISTS b', $client->statements[2]);
     }
 
     #[Group('units')]
@@ -69,6 +77,6 @@ class SchemaMigratorTest extends TestCase
         $client = $this->createMock(ClickHouseClientInterface::class);
         $client->expects($this->never())->method('execute');
 
-        $this->assertSame([], (new SchemaMigrator($client, $this->dir))->migrate());
+        Assert::assertSame([], new SchemaMigrator($client, $this->dir)->migrate());
     }
 }

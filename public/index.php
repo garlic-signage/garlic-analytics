@@ -19,5 +19,10 @@
 */
 declare(strict_types=1);
 
+
+use Psr\Container\ContainerInterface;
+use Slim\App;
+
+/** @var App<ContainerInterface|null> $app */
 $app = require __DIR__ . '/../config/bootstrap.php';
 $app->run();

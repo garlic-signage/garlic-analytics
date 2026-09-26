@@ -19,6 +19,8 @@
 */
 declare(strict_types=1);
 
+use Psr\Container\ContainerInterface;
+use Slim\App;
 use Slim\Factory\AppFactory;
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -26,6 +28,8 @@ require __DIR__ . '/../vendor/autoload.php';
 $app = AppFactory::create();
 $app->addErrorMiddleware(true, true, true);
 
-(require __DIR__ . '/routes.php')($app);
+/** @var callable(App<ContainerInterface|null>): void $routes */
+$routes = require __DIR__ . '/routes.php';
+$routes($app);
 
 return $app;

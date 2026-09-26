@@ -1,5 +1,7 @@
 parameters:
     level: max
+    typeAliases:
+        SlimApp: '\Slim\App<\Psr\Container\ContainerInterface|null>'
     paths:
         - src
         - tests

@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace App\Framework\Database\Migration;
 
 use App\Framework\Database\ClickHouseClientInterface;
+use RuntimeException;
 
 readonly class SchemaMigrator
 {
@@ -34,7 +35,10 @@ readonly class SchemaMigrator
     /** @return list<string> ausgeführte Dateien */
     public function migrate(): array
     {
-        $files = glob($this->directory . '/*.sql') ?: [];
+        $files = glob($this->directory . '/*.sql');
+        if ($files === false)
+            throw new RuntimeException('Cannot read migrations directory: ' . $this->directory);
+
         sort($files, SORT_STRING);
 
         foreach ($files as $file)
@@ -49,7 +53,7 @@ readonly class SchemaMigrator
     /** @return list<string> */
     private function splitStatements(string $sql): array
     {
-        $sql = preg_replace('/^\s*--.*$/m', '', $sql);
+        $sql   = preg_replace('/^\s*--.*$/m', '', $sql) ?? '';
         $parts = array_map('trim', explode(';', $sql));
 
         return array_values(array_filter($parts, fn(string $p) => $p !== ''));
