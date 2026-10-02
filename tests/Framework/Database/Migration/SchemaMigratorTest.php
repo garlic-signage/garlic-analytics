@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace Tests\Framework\Database\Migration;
 
 use App\Framework\Database\ClickHouseClientInterface;
+use App\Framework\Database\Migration\SchemaMigrator;
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
