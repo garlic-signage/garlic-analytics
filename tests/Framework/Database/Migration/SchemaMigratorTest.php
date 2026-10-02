@@ -20,7 +20,7 @@
 declare(strict_types=1);
 
 
-namespace App\Framework\Database\Migration;
+namespace Tests\Framework\Database\Migration;
 
 use App\Framework\Database\ClickHouseClientInterface;
 use PHPUnit\Framework\Assert;
