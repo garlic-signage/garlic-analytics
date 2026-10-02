@@ -57,6 +57,7 @@ Both must be green. The same two commands run on GitHub after every push.
 ## Documentation
 
 - [docs/architecture.md](docs/architecture.md): how the application is put together and how a request runs through it
+- [CONTRIBUTING.md](CONTRIBUTING.md): setup, checks and conventions for contributors
 
 ## License
 
