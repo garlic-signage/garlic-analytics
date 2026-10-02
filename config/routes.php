@@ -1,9 +1,9 @@
 <?php
 /*
- garlic-analytics: Digital Signage Management Platform
+  GarlicSignage: Open Source Digital Signage Stack
 
  Copyright (C) 2026 Nikolaos Sagiadinos <garlic@saghiadinos.de>
- This file is part of the garlic-analytics source code
+ This file is part of the GarlicSignage source code
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Affero General Public License, version 3,

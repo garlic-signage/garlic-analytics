@@ -1,9 +1,9 @@
 <?php
 /*
- garlic-analytics: Digital Signage Management Platform
+ GarlicSignage: Open Source Digital Signage Stack
 
  Copyright (C) 2026 Nikolaos Sagiadinos <garlic@saghiadinos.de>
- This file is part of the garlic-analytics source code
+ This file is part of the GarlicSignage source code
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Affero General Public License, version 3,
@@ -19,11 +19,96 @@
 */
 declare(strict_types=1);
 
+use DI\ContainerBuilder;
 use Psr\Container\ContainerInterface;
 use Slim\App;
 use Slim\Factory\AppFactory;
+$start_time   = microtime(true);
+$start_memory = memory_get_usage();
 
-require __DIR__ . '/../vendor/autoload.php';
+/* @var App $app */
+$systemDir = realpath(__DIR__. '/../');
+
+try
+{
+    if (!is_string($systemDir) || !file_exists($systemDir))
+        throw new RuntimeException('Invalid or non-existent system directory provided: ' . var_export($systemDir, true));
+
+    require $systemDir.'/vendor/autoload.php';
+    $dotenv = Dotenv\Dotenv::createImmutable($systemDir);
+    $dotenv->load();
+}
+catch (Throwable $e)
+{
+    die('Error during initialization: ' . $e->getMessage());
+}
+
+$paths = [
+    'systemDir' => $systemDir,
+    'varDir' => $systemDir . '/var',
+    'cacheDir' => $systemDir . '/var/cache',
+    'logDir' => $systemDir . '/var/logs',
+    'keysDir' => $systemDir . '/var/keys',
+    'configDir' => $systemDir . '/config',
+    'migrationDir' => $systemDir . '/migrations',
+    'commandDir' => $systemDir . '/src/Commands'
+];
+
+$containerBuilder = new ContainerBuilder();
+// The Config class has to load first
+$containerBuilder->addDefinitions([
+    Config::class => new Config(
+        new IniConfigLoader($paths['configDir'].'/settings'),
+        $paths,
+        $_ENV
+    ),
+]);
+
+$containerBuilder->addDefinitions($systemDir . '/config/services/_default.php'); // must be the first file
+$directoryIterator = new RecursiveIteratorIterator(
+    new RecursiveDirectoryIterator($systemDir . '/config/services', FilesystemIterator::SKIP_DOTS)
+);
+foreach ($directoryIterator as $file)
+{
+    if (fnmatch('*.php', $file->getFilename()))
+    {
+        $containerBuilder->addDefinitions($file->getPathname());
+    }
+}
+try
+{
+    $container = $containerBuilder->build();
+
+    $csrfToken = $container->get(CsrfToken::class);
+}
+catch (Exception $e)
+{
+
+}
+if (php_sapi_name() !== 'cli')
+{
+    $middlewareLoader = require $systemDir.'/config/middleware.php';
+    /** @var ContainerInterface $container  */
+    $app = $middlewareLoader($container, $start_time, $start_memory);
+}
+else
+{
+    /** @var ContainerInterface $container  */
+    $app              = $container->get(Application::class);
+    $config           = $container->get(Config::class);
+    $commandDirectory = $config->getPaths('commandDir');
+
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($commandDirectory)) as $file)
+    {
+        if (!$file->isFile() || $file->getExtension() !== 'php')
+            continue;
+
+        $class = 'App\\Commands\\' . $file->getBasename('.php');
+        if (class_exists($class))
+            $app->add($container->get($class));
+
+    }
+}
 
 $app = AppFactory::create();
 $app->addErrorMiddleware(true, true, true);
