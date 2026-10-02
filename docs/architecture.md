@@ -44,8 +44,8 @@ CMS -> GET /v1/stats/... (API) -> displays results, resolves IDs to names and th
 - `GET /v1/stats/...`: fixed endpoints with parameters, no free-form SQL. Responses contain only IDs and numbers, no names.
 - `GET /v1/health`: no authentication, also checks the ClickHouse connection.
 - Errors are returned as JSON with a matching HTTP status and a meaningful message.
-- The schema is defined by idempotent SQL files in `api/migrations/` (`CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`). A runner executes all files in order on startup. New tables and columns therefore reach existing installations automatically.
-- The ClickHouse connection is configured only via environment (`CLICKHOUSE_URL`, `CLICKHOUSE_USER`, `CLICKHOUSE_PASSWORD`). ClickHouse can run on the same host or a separate one.
+- The schema is defined by idempotent SQL files in `migrations/` (`CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`). A runner (`bin/migrate.php`) executes all files in order on startup. New tables and columns therefore reach existing installations automatically.
+- The ClickHouse connection is configured only via environment (`CLICKHOUSE_HOST`, `CLICKHOUSE_PORT`, `CLICKHOUSE_USER`, `CLICKHOUSE_PASSWORD`, `CLICKHOUSE_DATABASE`). ClickHouse can run on the same host or a separate one.
 
 ## Collector Step 2.
 
@@ -94,19 +94,18 @@ CMS -> GET /v1/stats/... (API) -> displays results, resolves IDs to names and th
 ## Configuration
 
 - Environment: `APP_ENV` sets the log level (`dev` from debug, `prod` from error, anything else from info). `APP_DEBUG=true` adds the real error message to `500` responses.
-- Module settings: one INI file per module, named `config_<module>.ini`. A file is loaded on first access and cached for the rest of the request.# Architecture
+- Module settings: one INI file per module, named `config_<module>.ini`. A file is loaded on first access and cached for the rest of the request.
+- All INI values are strings. Numbers are cast by the caller.
+- A missing or broken INI file throws a `CoreException`.
+- Both sources are read through `App\Framework\Core\Config\Config`.
 
 ## Tech stack
 
 - PHP 8.4 with strict types
 - Slim 4, PHP-DI
-- ClickHouse via its HTTP interface (Guzzle), no ORM
+- ClickHouse via its HTTP interface (`smi2/phpclickhouse`), no ORM
 - PHPUnit, PHPStan at the highest level with strict rules
 - Docker: official `clickhouse/clickhouse-server` image with a pinned version, API and collector containers based on FrankenPHP
-
-- All INI values are strings. Numbers are cast by the caller.
-- A missing or broken INI file throws a `CoreException`.
-- Both sources are read through `App\Framework\Core\Config\Config`.
 
 ## Quality checks
 

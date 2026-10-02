@@ -6,8 +6,6 @@
 
 Self-hosted analytics service for digital signage players. Collects logs, proof-of-play reports and connection events in ClickHouse and provides a REST API for CMS integration.
 
-Self-hosted analytics service for digital signage players. Collects logs, proof-of-play reports and connection events in ClickHouse and provides a REST API for CMS integration.
-
 Part of the [GarlicSignage](https://github.com/garlic-signage) stack.
 
 ## Status

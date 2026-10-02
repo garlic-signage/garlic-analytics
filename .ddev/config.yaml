@@ -12,9 +12,11 @@ database:
 use_dns_when_possible: true
 composer_version: "2"
 web_environment:
-    - CLICKHOUSE_URL=http://clickhouse:8123
+    - CLICKHOUSE_HOST=clickhouse
+    - CLICKHOUSE_PORT=8123
     - CLICKHOUSE_USER=analytics
     - CLICKHOUSE_PASSWORD=analytics
+    - CLICKHOUSE_DATABASE=analytics
 nodejs_version: "24"
 corepack_enable: false
 
