@@ -19,12 +19,12 @@
 */
 declare(strict_types=1);
 
+use App\Framework\Core\Config\Config;
+use App\Framework\Core\Config\IniConfigLoader;
 use DI\ContainerBuilder;
 use Psr\Container\ContainerInterface;
 use Slim\App;
 use Slim\Factory\AppFactory;
-$start_time   = microtime(true);
-$start_memory = memory_get_usage();
 
 /* @var App $app */
 $systemDir = realpath(__DIR__. '/../');
@@ -59,8 +59,7 @@ $containerBuilder = new ContainerBuilder();
 $containerBuilder->addDefinitions([
     Config::class => new Config(
         new IniConfigLoader($paths['configDir'].'/settings'),
-        $paths,
-        $_ENV
+        $paths
     ),
 ]);
 
@@ -68,6 +67,7 @@ $containerBuilder->addDefinitions($systemDir . '/config/services/_default.php');
 $directoryIterator = new RecursiveIteratorIterator(
     new RecursiveDirectoryIterator($systemDir . '/config/services', FilesystemIterator::SKIP_DOTS)
 );
+/** @var SplFileInfo $file */
 foreach ($directoryIterator as $file)
 {
     if (fnmatch('*.php', $file->getFilename()))
@@ -78,37 +78,16 @@ foreach ($directoryIterator as $file)
 try
 {
     $container = $containerBuilder->build();
-
-    $csrfToken = $container->get(CsrfToken::class);
 }
 catch (Exception $e)
 {
 
 }
-if (php_sapi_name() !== 'cli')
-{
-    $middlewareLoader = require $systemDir.'/config/middleware.php';
-    /** @var ContainerInterface $container  */
-    $app = $middlewareLoader($container, $start_time, $start_memory);
-}
-else
-{
-    /** @var ContainerInterface $container  */
-    $app              = $container->get(Application::class);
-    $config           = $container->get(Config::class);
-    $commandDirectory = $config->getPaths('commandDir');
 
-    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($commandDirectory)) as $file)
-    {
-        if (!$file->isFile() || $file->getExtension() !== 'php')
-            continue;
-
-        $class = 'App\\Commands\\' . $file->getBasename('.php');
-        if (class_exists($class))
-            $app->add($container->get($class));
-
-    }
-}
+$middlewareLoader = require $systemDir.'/config/middleware.php';
+/** @var ContainerInterface $container */
+/** @var callable(ContainerInterface): App<ContainerInterface> $middlewareLoader */
+$app = $middlewareLoader($container);
 
 $app = AppFactory::create();
 $app->addErrorMiddleware(true, true, true);

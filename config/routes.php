@@ -19,8 +19,6 @@
 */
 declare(strict_types=1);
 
-use Slim\Factory\AppFactory;
-
 require __DIR__ . '/../vendor/autoload.php';
 
 use Psr\Http\Message\ResponseInterface as Response;
@@ -31,7 +29,7 @@ return function (App $app): void
 {
     $app->get('/v1/health', function (Request $request, Response $response)
     {
-        $response->getBody()->write(json_encode(['status' => 'ok']));
+        $response->getBody()->write(json_encode(['status' => 'ok'], JSON_THROW_ON_ERROR));
         return $response->withHeader('Content-Type', 'application/json');
     });
 };
