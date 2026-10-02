@@ -4,7 +4,7 @@ garlic-analytics is a self-hosted analytics service for digital signage players.
 
 ## Components
 
-The project consists of two components in one repository:
+The project will consist of two components in one repository:
 
 - **API** (`api/`): accepts normalized events, writes them to ClickHouse and serves reports and aggregates. Not public. Reachable only by CMS instances and the collector.
 - **Collector** (`collector/`): public. Players upload their logs directly via WebDAV. The collector normalizes them using adapters and forwards them to the API.
@@ -47,7 +47,7 @@ CMS -> GET /v1/stats/... (API) -> displays results, resolves IDs to names and th
 - The schema is defined by idempotent SQL files in `api/migrations/` (`CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`). A runner executes all files in order on startup. New tables and columns therefore reach existing installations automatically.
 - The ClickHouse connection is configured only via environment (`CLICKHOUSE_URL`, `CLICKHOUSE_USER`, `CLICKHOUSE_PASSWORD`). ClickHouse can run on the same host or a separate one.
 
-## Collector
+## Collector Step 2.
 
 - Publicly reachable for players.
 - Accepts uploads via WebDAV or HTTP PUT and stores them in `inbox/`.
@@ -65,26 +65,36 @@ CMS -> GET /v1/stats/... (API) -> displays results, resolves IDs to names and th
   - Reprocessing: move files from `error/` or `processed/` back to `inbox/`. Idempotency in the API prevents double counting.
 - The collector is optional and started via a Docker Compose profile.
 
-## Event format
+## Request handling
 
-- Normalized events are sent as JSON, documented in [event-format.md](event-format.md). This format is the contract between clients (CMS, collector) and the API.
-- References are IDs only (player ID, media ID, playlist ID). No URLs, no thumbnail links, no paths.
-- A name may optionally be included as a historical snapshot (e.g. the media name at the time of playback). This is a value, not a reference.
-- Thumbnails are managed exclusively by the CMS or media server.
+- Middleware wraps the controller like the layers of an onion. The one added last is the outermost and runs first:
 
-## Authentication
+  Request
+  -> ErrorMiddleware          (added last, runs first)
+  -> RoutingMiddleware
+  -> BodyParsingMiddleware
+  -> Controller
 
-- One API key per client, sent as `Authorization: Bearer <key>`. Never as a query parameter.
-- Keys are generated with 32 random bytes. Only the SHA-256 hash is stored in a configuration file outside the document root, mapped to a tenant ID and scopes. Comparison uses `hash_equals()`.
-- The tenant ID is derived from the key. Clients never send a tenant ID. Every query is strictly filtered by tenant.
-- Scopes: `ingest`, `read`. The collector only gets `ingest`.
-- When running behind Apache, `CGIPassAuth On` is required so the `Authorization` header reaches PHP.
+- BodyParsingMiddleware converts a JSON request body into an array.
+- RoutingMiddleware finds the route for the URL. It throws 404 or 405 if there is none.
+- ErrorMiddleware is added last. Only as the outermost layer it can catch everything thrown further inside, including the 404 from routing.
 
-## Idempotency
+## Error handling
 
-- Every request carries a batch ID (hash of the source file or block). Every event has a unique event ID.
-- The batch ID is used as `insert_deduplication_token`, together with `non_replicated_deduplication_window` on the tables and `deduplicate_blocks_in_dependent_materialized_views = 1`, so aggregates are not counted twice either.
-- Resending after an error or reprocessing is always safe.
+- Exceptions and Errors (thrown exceptions, TypeError, method call on null) are caught by the error middleware.
+- Warnings and notices are converted into an `ErrorException` by `set_error_handler`, so they end up in the error middleware too. Not converted: errors suppressed with `@` and deprecations. Deprecations are written to the PHP log.
+- Fatal errors (memory limit, max execution time) cannot be caught.
+- Every exception becomes a JSON response:
+  - `Slim\Exception\HttpException`: its own status code and message
+  - `ValidationException`: `422`
+  - anything else: `500` with a fixed text
+- Only `5xx` responses are logged.
+- The real message of a `500` is only returned when `APP_DEBUG=true`.
+
+## Configuration
+
+- Environment: `APP_ENV` sets the log level (`dev` from debug, `prod` from error, anything else from info). `APP_DEBUG=true` adds the real error message to `500` responses.
+- Module settings: one INI file per module, named `config_<module>.ini`. A file is loaded on first access and cached for the rest of the request.# Architecture
 
 ## Tech stack
 
@@ -93,33 +103,14 @@ CMS -> GET /v1/stats/... (API) -> displays results, resolves IDs to names and th
 - ClickHouse via its HTTP interface (Guzzle), no ORM
 - PHPUnit, PHPStan at the highest level with strict rules
 - Docker: official `clickhouse/clickhouse-server` image with a pinned version, API and collector containers based on FrankenPHP
-- Each component has its own `composer.json`
 
-## Repository layout
+- All INI values are strings. Numbers are cast by the caller.
+- A missing or broken INI file throws a `CoreException`.
+- Both sources are read through `App\Framework\Core\Config\Config`.
 
-```
-docker-compose.yml     clickhouse, api, collector (profile)
-docs/
-  architecture.md
-  event-format.md
-  api.md
-api/
-  composer.json
-  config/
-  public/
-  migrations/
-  src/
-  tests/
-  Dockerfile
-collector/
-  composer.json
-  config/
-  public/
-  src/
-  tests/
-  Dockerfile
-```
+## Quality checks
 
-## License
-
-AGPL-3.0-or-later
+- PHPUnit and PHPStan run on GitHub after every push and for every pull request. There is one workflow per tool in `.github/workflows/`, so each has its own status badge.
+- Both can be run locally with the same commands the workflows use.
+- Tests use a stub when they only need return values. A mock is used only when the call itself is tested, e.g. that a configuration file is loaded only once.
+- Coverage is measured locally when needed. There is no threshold and no badge.
