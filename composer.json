@@ -13,8 +13,7 @@
         "monolog/monolog": "^3.10",
         "symfony/console": "^7.4",
         "guzzlehttp/guzzle": "^7.10",
-        "ext-curl": "*",
-        "ext-http": "*"
+        "ext-curl": "*"
     },
     "autoload": {
         "psr-4": {
