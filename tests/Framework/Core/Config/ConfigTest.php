@@ -27,13 +27,13 @@ use App\Framework\Exceptions\CoreException;
 use Monolog\Level;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\MockObject\Exception;
-use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 
 class ConfigTest extends TestCase
 {
     private Config $config;
-    private ConfigLoaderInterface&MockObject $configLoaderMock;
+    private ConfigLoaderInterface&Stub $configLoaderStub;
 
     /**
      * @throws Exception
@@ -41,14 +41,10 @@ class ConfigTest extends TestCase
     protected function setUp(): void
     {
 		parent::setUp();
-		$this->configLoaderMock = $this->createMock(ConfigLoaderInterface::class);
-        $this->config           = new Config($this->configLoaderMock, ['key_path' => 'value_path'], ['key_env' => 'value_env']);
+		$this->configLoaderStub = static::createStub(ConfigLoaderInterface::class);
+        $this->config           = new Config($this->configLoaderStub, ['key_path' => 'value_path'], ['key_env' => 'value_env']);
     }
 
-
-    /**
-     * @throws CoreException
-     */
     #[Group('units')]
     public function testGetConfigValueReturnsValue(): void
     {
@@ -56,10 +52,9 @@ class ConfigTest extends TestCase
         $key    = 'test_key';
         $value  = 'test_value';
 
-        $this->configLoaderMock
+        $this->configLoaderStub
             ->method('load')
-            ->with($module)
-            ->willReturn(['heidewitzka' => 'Der Kapitan', 'section' => [$key => $value]]);
+            ->willReturn(['heidewitzka' => 'Der Kapitän', 'section' => [$key => $value]]);
 
         $result = $this->config->getConfigValue($key, $module, 'section');
 
@@ -81,18 +76,14 @@ class ConfigTest extends TestCase
 
 	}
 
-    /**
-     * @throws CoreException
-     */
     #[Group('units')]
     public function testGetConfigValueReturnsNullForNonExistentKey(): void
     {
         $module = 'test_module';
         $key = 'nonexistent_key';
 
-        $this->configLoaderMock
+        $this->configLoaderStub
             ->method('load')
-            ->with($module)
             ->willReturn(['section' => ['existing_key' => 'value']]);
 
         $result = $this->config->getConfigValue($key, $module, 'section');
@@ -103,50 +94,46 @@ class ConfigTest extends TestCase
 	#[Group('units')]
 	public function testLogLevelIsDebugInDevEnvironment(): void
 	{
-		$config = new Config($this->configLoaderMock, [], ['APP_ENV' => 'dev']);
+		$config = new Config($this->configLoaderStub, [], ['APP_ENV' => 'dev']);
 		static::assertEquals(Level::Debug, $config->getLogLevel());
 	}
 
 	#[Group('units')]
 	public function testLogLevelIsInfoInTestEnvironment(): void
 	{
-		$config = new Config($this->configLoaderMock, [], ['APP_ENV' => 'test']);
+		$config = new Config($this->configLoaderStub, [], ['APP_ENV' => 'test']);
 		static::assertEquals(Level::Info, $config->getLogLevel());
 	}
 
 	#[Group('units')]
 	public function testLogLevelIsErrorInProdEnvironment(): void
 	{
-		$config = new Config($this->configLoaderMock, [], ['APP_ENV' => 'prod']);
+		$config = new Config($this->configLoaderStub, [], ['APP_ENV' => 'prod']);
 		static::assertEquals(Level::Error, $config->getLogLevel());
 	}
 
 	#[Group('units')]
 	public function testLogLevelIsWarningInUnknownEnvironment(): void
 	{
-		$config = new Config($this->configLoaderMock, [], ['APP_ENV' => 'unknown']);
+		$config = new Config($this->configLoaderStub, [], ['APP_ENV' => 'unknown']);
 		static::assertEquals(Level::Info, $config->getLogLevel());
 	}
 
 	#[Group('units')]
 	public function logLevelIsWarningWhenEnvIsNotSet(): void
 	{
-		$config = new Config($this->configLoaderMock, [], []);
+		$config = new Config($this->configLoaderStub, [], []);
 		static::assertEquals(Level::Warning, $config->getLogLevel());
 	}
 
-	/**
-     * @throws CoreException
-     */
     #[Group('units')]
     public function testGetFullConfigDataByModule(): void
     {
         $module = 'test_module';
         $configData = ['key1' => 'value1', 'key2' => 'value2'];
 
-        $this->configLoaderMock
+        $this->configLoaderStub
             ->method('load')
-            ->with($module)
             ->willReturn($configData);
 
         $result = $this->config->getFullConfigDataByModule($module);
@@ -154,10 +141,7 @@ class ConfigTest extends TestCase
         static::assertEquals($configData, $result);
     }
 
-    /**
-     * @throws CoreException
-     */
-    #[Group('units')]
+     #[Group('units')]
     public function testPreloadModulesCachesConfigurations(): void
     {
         $modules = ['module1', 'module2'];
@@ -166,9 +150,9 @@ class ConfigTest extends TestCase
             'module2' => ['key2' => 'value2'],
         ];
 
-        $this->configLoaderMock
+        $this->configLoaderStub
             ->method('load')
-            ->willReturnCallback(function ($module) use ($configData) {
+            ->willReturnCallback(function (string $module) use ($configData) {
                 return $configData[$module] ?? [];
             });
 
@@ -180,29 +164,23 @@ class ConfigTest extends TestCase
         static::assertEquals($configData['module2'], $this->config->getFullConfigDataByModule('module2'));
     }
 
-    /**
-     * @throws CoreException
-     */
     #[Group('units')]
     public function testGetConfigForModuleCachesResults(): void
     {
         $module = 'test_module';
         $configData = ['key1' => 'value1'];
 
-        $this->configLoaderMock
-            ->expects($this->once())
+        $configLoaderMock = $this->createMock(ConfigLoaderInterface::class);
+        $configLoaderMock->expects($this->once())
             ->method('load')
             ->with($module)
             ->willReturn($configData);
 
-        // request from loader
-        $result1 = $this->config->getFullConfigDataByModule($module);
+        $config = new Config($configLoaderMock);
 
-        // 2nd request from cache
-        $result2 = $this->config->getFullConfigDataByModule($module);
+        static::assertSame($configData, $config->getFullConfigDataByModule('test_module'));
+        static::assertSame($configData, $config->getFullConfigDataByModule('test_module'));
 
-        static::assertEquals($configData, $result1);
-        static::assertEquals($configData, $result2);
     }
 
     #[Group('units')]
@@ -210,13 +188,12 @@ class ConfigTest extends TestCase
     {
         $module = 'test_module';
 
-        $this->configLoaderMock
+        $this->configLoaderStub
             ->method('load')
-            ->with($module)
             ->willThrowException(new CoreException('Error loading module'));
 
         $this->expectException(CoreException::class);
-        $this->expectExceptionMessage('Error loading module');
+        $this->expectExceptionMessageIs('Error loading module');
 
         $this->config->getFullConfigDataByModule($module);
     }

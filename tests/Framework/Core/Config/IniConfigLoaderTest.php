@@ -53,7 +53,7 @@ class IniConfigLoaderTest extends TestCase
         $loader = new IniConfigLoader($this->baseDirectory);
 
         $this->expectException(CoreException::class);
-        $this->expectExceptionMessage('Unable to access configuration file: '.$this->baseDirectory.'config_nonexistent.ini');
+        $this->expectExceptionMessageIs('Unable to access configuration file: '.$this->baseDirectory.'config_nonexistent.ini');
 
         $loader->load('nonexistent');
     }
@@ -64,7 +64,7 @@ class IniConfigLoaderTest extends TestCase
         $loader = new IniConfigLoader($this->baseDirectory);
 
         $this->expectException(CoreException::class);
-        $this->expectExceptionMessage('Error parsing configuration file: '.$this->baseDirectory.'config_invalid.ini');
+        $this->expectExceptionMessageIsOrContains('Error parsing configuration file: '.$this->baseDirectory.'config_invalid.ini');
 
         $loader->load('invalid');
     }

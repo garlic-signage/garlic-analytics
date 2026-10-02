@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace Tests\Framework\Core;
 
 use App\Framework\Core\Crypt;
+use Exception;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
@@ -37,7 +38,7 @@ class CryptTest extends TestCase
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     #[Group('units')]
     public function testGenerateRandomString(): void
@@ -49,7 +50,7 @@ class CryptTest extends TestCase
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     #[Group('units')]
     public function testGenerateRandomStringWithZeroLength(): void
@@ -62,7 +63,7 @@ class CryptTest extends TestCase
 
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     #[Group('units')]
     public function testGeneratePassword(): void
@@ -74,7 +75,7 @@ class CryptTest extends TestCase
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     #[Group('units')]
     public function testGenerateRandomNumber(): void
