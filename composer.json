@@ -13,7 +13,8 @@
         "monolog/monolog": "^3.10",
         "symfony/console": "^7.4",
         "guzzlehttp/guzzle": "^7.10",
-        "ext-curl": "*"
+        "ext-curl": "*",
+        "smi2/phpclickhouse": "^1.26"
     },
     "autoload": {
         "psr-4": {
