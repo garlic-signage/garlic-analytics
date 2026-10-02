@@ -23,18 +23,23 @@ use App\Framework\Core\Config\Config;
 use App\Framework\Database\ClickHouseClient;
 use App\Framework\Database\ClickHouseClientInterface;
 use App\Framework\Database\Migration\SchemaMigrator;
+use ClickHouseDB\Client;
 use Psr\Container\ContainerInterface;
 
 $dependencies = [];
 
-$dependencies[ClickHouseClientInterface::class] = DI\factory(function ()
+$dependencies[ClickHouseClientInterface::class] = DI\factory(function (ContainerInterface $container)
 {
-    return new ClickHouseClient(
-        $_ENV['CLICKHOUSE_URL'] ?? 'http://127.0.0.1:8123',
-        $_ENV['CLICKHOUSE_DATABASE'] ?? 'default',
-        $_ENV['CLICKHOUSE_USER'] ?? 'default',
-        $_ENV['CLICKHOUSE_PASSWORD'] ?? ''
-    );
+    /** @var Config $config */
+    $config = $container->get(Config::class);
+    $client = new Client([
+        'host'     => $config->getEnv('CLICKHOUSE_HOST', '127.0.0.1'),
+        'port'     => $config->getEnv('CLICKHOUSE_PORT', '8123'),
+        'username' => $config->getEnv('CLICKHOUSE_USER', 'default'),
+        'password' => $config->getEnv('CLICKHOUSE_PASSWORD')
+    ]);
+    $client->database($config->getEnv('CLICKHOUSE_DATABASE', 'default'));
+    return new ClickHouseClient($client);
 });
 
 $dependencies[SchemaMigrator::class] = DI\factory(function (ContainerInterface $container)

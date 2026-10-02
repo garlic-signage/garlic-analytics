@@ -35,7 +35,8 @@ try
 
     require $systemDir.'/vendor/autoload.php';
     $dotenv = Dotenv\Dotenv::createImmutable($systemDir);
-    $dotenv->load();
+    /** @var array<string, string> $env */
+    $env = $dotenv->load();
 }
 catch (Throwable $e)
 {
@@ -58,7 +59,8 @@ $containerBuilder = new ContainerBuilder();
 $containerBuilder->addDefinitions([
     Config::class => new Config(
         new IniConfigLoader($paths['configDir'].'/settings'),
-        $paths
+        $paths,
+        $env
     ),
 ]);
 
@@ -86,7 +88,6 @@ catch (Exception $e)
 }
 
 $middlewareLoader = require $systemDir.'/config/middleware.php';
-/** @var ContainerInterface $container */
 /** @var callable(ContainerInterface): App<ContainerInterface> $middlewareLoader */
 $app = $middlewareLoader($container);
 
