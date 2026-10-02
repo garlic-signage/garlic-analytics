@@ -56,7 +56,9 @@ return /** @throws ContainerExceptionInterface|NotFoundExceptionInterface */ fun
     /** @var LoggerInterface $logger */
     $logger = $container->get('AppLogger');
 
-    require __DIR__ . '/routes.php';
+    /** @var callable(App<ContainerInterface>): void $routes */
+    $routes = require __DIR__ . '/routes.php';
+    $routes($app);
 
     $app->addBodyParsingMiddleware();
     $app->addRoutingMiddleware();

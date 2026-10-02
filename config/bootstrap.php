@@ -24,7 +24,6 @@ use App\Framework\Core\Config\IniConfigLoader;
 use DI\ContainerBuilder;
 use Psr\Container\ContainerInterface;
 use Slim\App;
-use Slim\Factory\AppFactory;
 
 /* @var App $app */
 $systemDir = realpath(__DIR__. '/../');
@@ -81,19 +80,14 @@ try
 }
 catch (Exception $e)
 {
-
+    http_response_code(500);
+    echo 'Error building the container: ' . $e->getMessage() . PHP_EOL;
+    exit(1);
 }
 
 $middlewareLoader = require $systemDir.'/config/middleware.php';
 /** @var ContainerInterface $container */
 /** @var callable(ContainerInterface): App<ContainerInterface> $middlewareLoader */
 $app = $middlewareLoader($container);
-
-$app = AppFactory::create();
-$app->addErrorMiddleware(true, true, true);
-
-/** @var callable(App<ContainerInterface|null>): void $routes */
-$routes = require __DIR__ . '/routes.php';
-$routes($app);
 
 return $app;

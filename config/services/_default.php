@@ -21,6 +21,8 @@ declare(strict_types=1);
 
 use App\Framework\Core\Config\Config;
 use App\Framework\Core\Crypt;
+use App\Framework\Database\ClickHouseClientInterface;
+use App\Framework\Database\Migration\SchemaMigrator;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Psr\Container\ContainerInterface;
@@ -57,6 +59,5 @@ $dependencies['AppLogger'] = DI\factory(function (ContainerInterface $container)
 });
 $dependencies[App::class] = DI\factory([AppFactory::class, 'createFromContainer']); // Slim App
 $dependencies[Crypt::class] = DI\factory(function (){return new Crypt();});
-
 
 return $dependencies;
