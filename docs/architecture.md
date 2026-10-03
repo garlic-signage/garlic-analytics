@@ -37,7 +37,8 @@ CMS -> GET /v1/<module>/... (API) -> displays results, resolves IDs to names and
 
 - Not public. Reachable only from the internal network or restricted to specific addresses by firewall.
 - Every module provides its own endpoints: one for ingest and one or more for reading, e.g. `POST /v1/playlog` and `GET /v1/playlog/{player_id}`. See [Modules](#modules).
-- Ingest: one request per source file, normalized events as JSON, gzip supported. Maximum number of events per request (guideline 5,000), larger batches are split by the client.
+- Ingest: one request per source file, normalized events as JSON (`{"events": [...]}`), gzip supported.
+- Idempotency: one request is one `INSERT`. Its `insert_deduplication_token` is a hash of the events, together with `deduplicate_blocks_in_dependent_materialized_views=1` the same request sent again (client retry) is dropped, also in the hourly tables (they need `non_replicated_deduplication_window`). Overlapping but different batches are not detected. The answer is `201` in both cases. The window is 1,000,000 inserts, a request must stay one block (limit of events per request).
 - Responses:
   - `2xx`: success
   - `4xx`: invalid data, the client must not retry unchanged

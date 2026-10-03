@@ -61,7 +61,7 @@ class SchemaMigratorTest extends TestCase
             /** @var list<string> */
             public array $statements = [];
             public function execute(string $sql): void { $this->statements[] = $sql; }
-            public function insert(string $table, array $rows, array $columns): void {}
+            public function insert(string $table, array $rows, array $columns, ?string $deduplicationToken = null): void {}
         };
 
         $executed = new SchemaMigrator($client, $this->dir)->migrate();

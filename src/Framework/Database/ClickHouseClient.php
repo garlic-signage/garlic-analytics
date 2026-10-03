@@ -25,6 +25,7 @@ namespace App\Framework\Database;
 use App\Framework\Exceptions\DatabaseException;
 use ClickHouseDB\Client;
 use ClickHouseDB\Exception\ClickHouseException;
+use ClickHouseDB\Quote\FormatLine;
 
 readonly class ClickHouseClient implements ClickHouseClientInterface
 {
@@ -40,11 +41,26 @@ readonly class ClickHouseClient implements ClickHouseClientInterface
         $this->client->write($sql);
     }
 
-    public function insert(string $table, array $rows, array $columns): void
+    public function insert(string $table, array $rows, array $columns, ?string $deduplicationToken = null): void
     {
+        if ($rows === [])
+            return;
+
+        $values = [];
+        foreach ($rows as $row)
+            $values[] = '(' . FormatLine::Insert($row) . ')';
+
+        $sql = 'INSERT INTO `' . $table . '` (`' . implode('`,`', $columns) . '`) VALUES ' . implode(',', $values);
+
+        // the second setting makes the token count for materialized views too (needs a window on their target table)
+        $settings = $deduplicationToken === null ? [] : [
+            'insert_deduplication_token'                         => $deduplicationToken,
+            'deduplicate_blocks_in_dependent_materialized_views' => 1,
+        ];
+
         try
         {
-            $this->client->insert($table, $rows, $columns);
+            $this->client->write($sql, [], true, $settings);
         }
         catch (ClickHouseException $e)
         {

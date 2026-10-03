@@ -4,18 +4,16 @@
 CREATE TABLE IF NOT EXISTS play_log
 (
     player_id   LowCardinality(String),
-    display_id  LowCardinality(String),
     content_id  LowCardinality(String),
-    start_time  DateTime64(3, 'UTC'),
-    end_time    DateTime64(3, 'UTC'),
-    duration_ms UInt32 MATERIALIZED toUInt32(greatest(0, dateDiff('millisecond', start_time, end_time))),
-    report_id   UUID,
+    start_time  DateTime('UTC'),
+    end_time    DateTime('UTC'),
+    duration_s  UInt32 MATERIALIZED toUInt32(greatest(0, dateDiff('second', start_time, end_time))),
     received_at DateTime('UTC') DEFAULT now()
 )
     ENGINE = MergeTree
         PARTITION BY toYYYYMM(start_time)
         ORDER BY (player_id, start_time, content_id)
-        TTL toDateTime(start_time) + INTERVAL 2 YEAR
+        TTL start_time + INTERVAL 2 YEAR
         SETTINGS
             non_replicated_deduplication_window = 1000000,
             ttl_only_drop_parts = 1;
@@ -27,13 +25,14 @@ CREATE TABLE IF NOT EXISTS play_hourly
     hour        DateTime('UTC'),
     content_id  LowCardinality(String),
     player_id   LowCardinality(String),
-    display_id  LowCardinality(String),
     plays       UInt64,
-    duration_ms UInt64
+    duration_s  UInt64
 )
-    ENGINE = SummingMergeTree((plays, duration_ms))
+    ENGINE = SummingMergeTree((plays, duration_s))
         PARTITION BY toYYYYMM(hour)
-        ORDER BY (content_id, hour, player_id, display_id);
+        ORDER BY (content_id, hour, player_id)
+        SETTINGS
+            non_replicated_deduplication_window = 1000000;
 
 -- Fills play_hourly on every insert into play_log
 CREATE MATERIALIZED VIEW IF NOT EXISTS play_hourly_mv TO play_hourly AS
@@ -41,11 +40,10 @@ SELECT
     toStartOfHour(start_time) AS hour,
     content_id,
     player_id,
-    display_id,
-    count()          AS plays,
-    sum(duration_ms) AS duration_ms
+    count()         AS plays,
+    sum(duration_s) AS duration_s
 FROM play_log
-GROUP BY hour, content_id, player_id, display_id;
+GROUP BY hour, content_id, player_id;
 
 -- Player events (playerEventLog records)
 -- based on https://garlic-signage.com/garlic-player/docs/essentials/logs-reports/#eventlog_format
@@ -53,12 +51,11 @@ GROUP BY hour, content_id, player_id, display_id;
 CREATE TABLE IF NOT EXISTS player_event
 (
     player_id    LowCardinality(String),
-    event_time   DateTime64(3, 'UTC'),
+    event_time   DateTime('UTC'),
     event_type   Enum8('debug' = 10, 'informational' = 20, 'notice' = 30, 'warning' = 40, 'error' = 50, 'critical' = 60, 'fatal' = 70),
     event_source LowCardinality(String),
     event_name   LowCardinality(String),
     metadata     Map(LowCardinality(String), String),
-    report_id    UUID,
     received_at  DateTime('UTC') DEFAULT now()
 )
     ENGINE = MergeTree
