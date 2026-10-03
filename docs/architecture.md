@@ -29,7 +29,7 @@ CMS -> GET /v1/<module>/... (API) -> displays results, resolves IDs to names and
 - There is exactly one way into the database: the ingest API. The collector never writes to ClickHouse directly. To the API it is a client like any CMS.
 - Clients send individual events (one entry per playback or occurrence), never pre-aggregated values. Aggregation happens exclusively in ClickHouse.
 - Aggregation is done with materialized views, there is no separate aggregation job. Hourly aggregates are stored, daily, monthly and yearly values are computed from them.
-- Retention is handled with TTL per event type: individual events are kept for up to 180 days, aggregates permanently or considerably longer.
+- Retention is handled with TTL per event type: individual events are kept for up to 2 years, aggregates permanently or considerably longer.
 - There is no tenant separation. An instance belongs to one CMS installation, data is assigned to players by their player ID. CMS installations that must not see each other's data run separate instances.
 - ClickHouse ports are never exposed to the outside.
 
@@ -104,7 +104,7 @@ CMS -> GET /v1/<module>/... (API) -> displays results, resolves IDs to names and
 - Fatal errors (memory limit, max execution time) cannot be caught.
 - Every exception becomes a JSON response:
   - `Slim\Exception\HttpException`: its own status code and message
-  - `ValidationException`: `422`
+  - `ValidationException`: `422`, with the messages per field in `errors`
   - anything else: `500` with a fixed text
 - Only `5xx` responses are logged.
 - The real message of a `500` is only returned when `APP_DEBUG=true`.
