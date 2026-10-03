@@ -22,6 +22,7 @@ declare(strict_types=1);
 use App\Framework\Core\Config\Config;
 use App\Framework\Database\ClickHouseClient;
 use App\Framework\Database\ClickHouseClientInterface;
+use App\Framework\Database\Migration\MigrateCommand;
 use App\Framework\Database\Migration\SchemaMigrator;
 use ClickHouseDB\Client;
 use Psr\Container\ContainerInterface;
@@ -50,6 +51,14 @@ $dependencies[SchemaMigrator::class] = DI\factory(function (ContainerInterface $
     $client = $container->get(ClickHouseClientInterface::class);
 
     return new SchemaMigrator($client, $config->getPaths('migrationDir'));
+});
+
+$dependencies[MigrateCommand::class] = DI\factory(function (ContainerInterface $container)
+{
+    /** @var SchemaMigrator $migrator */
+    $migrator = $container->get(SchemaMigrator::class);
+
+    return new MigrateCommand($migrator);
 });
 
 return $dependencies;

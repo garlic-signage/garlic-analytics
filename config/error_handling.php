@@ -25,6 +25,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
 use Slim\App;
 use Slim\Exception\HttpException;
+use Slim\Exception\HttpUnauthorizedException;
 
 /**
  * Central error handling.
@@ -103,6 +104,8 @@ return function (App $app, LoggerInterface $logger): void
             $payload['message'] = $exception->getMessage();
 
         $response = $app->getResponseFactory()->createResponse($status)->withHeader('Content-Type', 'application/json');
+        if ($exception instanceof HttpUnauthorizedException)
+            $response = $response->withHeader('WWW-Authenticate', 'Bearer'); // required for 401 by RFC 9110
 
         $data = json_encode($payload);
         if ($data !== false)
