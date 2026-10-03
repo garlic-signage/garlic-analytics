@@ -132,7 +132,7 @@ Every device family has its own upload directory, `var/collector/<device>/upload
 
 **Settings.** The API is configured in `.env`: `COLLECTOR_API_URL` (default `http://localhost`) and `COLLECTOR_API_KEY`. Create the key with `bin/console apikey:create collector --scope=ingest`. Without a key the command stops before it touches any file. `batch_size`, `min_age_seconds` and the timeouts are in `config/settings/config_collector.ini`. Files changed during the last `min_age_seconds` are skipped because they may still be uploading.
 
-**What happens to a file.** The events are cut into blocks of `batch_size`, one request per block. The cut is always the same for the same file, so blocks the API already has are dropped as duplicates when a file is sent again.
+**What happens to a file.** The events are cut into blocks of `batch_size`, one request per block. The cut is always the same for the same file, so blocks the API already has are dropped as duplicates when a file is sent again. The API answers `201` in that case too, because ClickHouse does not report a dropped duplicate. The summary therefore says "Events accepted by the API": the number includes events that were already stored. The row count of `play_log` shows what was really added.
 
 | Result | What happens |
 |---|---|

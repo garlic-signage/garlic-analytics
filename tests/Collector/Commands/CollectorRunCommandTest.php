@@ -112,7 +112,7 @@ class CollectorRunCommandTest extends TestCase
         static::assertSame(Command::SUCCESS, $status); // a rejected file is a data problem, not a failed run
         static::assertStringContainsString('sent     smil/playlog-a.xml  player player-1  2 events in 1 batch(es)', $display);
         static::assertStringContainsString('rejected smil/playlog-broken.xml  moved to error/: Invalid XML', $display);
-        static::assertStringContainsString('Files: 1 sent, 1 rejected, 1 skipped, 0 kept for retry. Events sent: 2 in 1 batch(es).', $display);
+        static::assertStringContainsString('Files: 1 sent, 1 rejected, 1 skipped, 0 kept for retry. Events accepted by the API: 2 in 1 batch(es). Duplicates are dropped by the API without notice.', $display);
         static::assertFileExists($this->base . '/processed/playlog-a.xml');
         static::assertFileExists($this->base . '/error/playlog-broken.xml.error');
         static::assertFileExists($this->base . '/upload/event-a.xml');

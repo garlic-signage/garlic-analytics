@@ -152,7 +152,7 @@ class CollectorRunCommand extends Command
         }
 
         $output->writeln(sprintf(
-            'Files: %d sent, %d rejected, %d skipped, %d kept for retry. Events sent: %d in %d batch(es).',
+            'Files: %d sent, %d rejected, %d skipped, %d kept for retry. Events accepted by the API: %d in %d batch(es). Duplicates are dropped by the API without notice.',
             $count(FileStatus::Sent), $count(FileStatus::Rejected), $skipped, $count(FileStatus::Retry), $events, $batches
         ));
     }
