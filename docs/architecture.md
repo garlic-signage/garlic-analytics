@@ -15,43 +15,61 @@ If your CMS normalizes player data itself, it only talks to the API and does not
 
 ```
 Option 1: normalized by the client
-  CMS normalizes player data -> POST /v1/events (API)
+  CMS normalizes player data -> POST /v1/<module> (API), e.g. POST /v1/playlog
 
 Option 2: direct upload from players
   Player -> WebDAV (collector) -> inbox/
     -> collector normalizes via adapter
-    -> POST /v1/events (API, internal network)
+    -> POST /v1/<module> (API, internal network)
 
 API -> ClickHouse: event tables + materialized views (aggregates)
-CMS -> GET /v1/stats/... (API) -> displays results, resolves IDs to names and thumbnails
+CMS -> GET /v1/<module>/... (API) -> displays results, resolves IDs to names and thumbnails
 ```
 
 - There is exactly one way into the database: the ingest API. The collector never writes to ClickHouse directly. To the API it is a client like any CMS.
 - Clients send individual events (one entry per playback or occurrence), never pre-aggregated values. Aggregation happens exclusively in ClickHouse.
 - Aggregation is done with materialized views, there is no separate aggregation job. Hourly aggregates are stored, daily, monthly and yearly values are computed from them.
 - Retention is handled with TTL per event type: individual events are kept for up to 180 days, aggregates permanently or considerably longer.
-- Every table contains a `tenant_id`, so one instance can serve multiple CMS installations.
+- There is no tenant separation. An instance belongs to one CMS installation, data is assigned to players by their player ID. CMS installations that must not see each other's data run separate instances.
 - ClickHouse ports are never exposed to the outside.
 
 ## API
 
 - Not public. Reachable only from the internal network or restricted to specific addresses by firewall.
-- `POST /v1/events`: one request per source file, normalized events as JSON, gzip supported. Maximum number of events per request (guideline 5,000), larger batches are split by the client.
+- Every module provides its own endpoints: one for ingest and one or more for reading, e.g. `POST /v1/playlog` and `GET /v1/playlog/{player_id}`. See [Modules](#modules).
+- Ingest: one request per source file, normalized events as JSON, gzip supported. Maximum number of events per request (guideline 5,000), larger batches are split by the client.
 - Responses:
   - `2xx`: success
   - `4xx`: invalid data, the client must not retry unchanged
   - `5xx`: server problem, the client retries later
-- `GET /v1/stats/...`: fixed endpoints with parameters, no free-form SQL. Responses contain only IDs and numbers, no names.
+- Read endpoints: fixed parameters, no free-form SQL, e.g. aggregated data of one player for a time range, paginated. Responses contain only IDs and numbers, no names.
 - `GET /v1/health`: no authentication, also checks the ClickHouse connection.
 - Errors are returned as JSON with a matching HTTP status and a meaningful message.
-- The schema is defined by idempotent SQL files in `migrations/` (`CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`). A runner (`bin/migrate.php`) executes all files in order on startup. New tables and columns therefore reach existing installations automatically.
+- The schema is defined by idempotent SQL files in `migrations/` (`CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`). A runner (`bin/console db:migrate`) executes all files in order on startup. New tables and columns therefore reach existing installations automatically.
 - The ClickHouse connection is configured only via environment (`CLICKHOUSE_HOST`, `CLICKHOUSE_PORT`, `CLICKHOUSE_USER`, `CLICKHOUSE_PASSWORD`, `CLICKHOUSE_DATABASE`). ClickHouse can run on the same host or a separate one.
+
+## Modules
+
+- Code is organized in modules under `src/Modules/<Module>/`: one module per event type (e.g. `PlayLog`, `PlayerEvent`, `PlayerConnect`, `SystemReport`) plus `Auth` and `Health`.
+- Each module has a controller for its routes, the validation of its events and a repository with the inserts and queries for its tables.
+- Concerns shared by all modules (authentication, gzip, batch ID as deduplication token, limit of events per request) are implemented once as middleware or in `src/Framework/`, not repeated in every module.
+- Read endpoints aggregate first (`sum()` with `GROUP BY` on the hourly tables) and paginate the aggregated result.
+- Routes stay central in `config/routes.php`, schema files stay central in `migrations/`.
+
+## Authentication
+
+- One API key per client, sent as `Authorization: Bearer <key>`. Never as a query parameter.
+- Keys are created by a CLI command with `bin2hex(random_bytes(32))` and shown only once. Only the SHA-256 hash is stored, together with the client name and its scopes. Comparison with `hash_equals()`.
+- The hashes are stored in a file in `var/keys/`, outside the docroot and outside the repository. Access goes through an interface, so the storage can be replaced later.
+- Scopes: `ingest` for writing, `read` for reading. The collector only gets `ingest`.
+- Missing or unknown key: `401`. Key without the required scope: `403`. `GET /v1/health` needs no key.
+- Keys are managed with `bin/console apikey:create|list|revoke`, see [cli.md](cli.md).
+- Apache only passes the `Authorization` header to PHP with `CGIPassAuth On` (set in `public/.htaccess`).
 
 ## Collector Step 2.
 
 - Publicly reachable for players.
 - Accepts uploads via WebDAV or HTTP PUT and stores them in `inbox/`.
-- Player access is configured per tenant. The player ID is taken from the file name or path.
 - Normalization is done by adapters, one per player format. An adapter translates a source-specific format (e.g. the XML report of a specific player) into the event format.
 - Sends normalized events to the API with its own API key (scope `ingest`).
 - File processing:

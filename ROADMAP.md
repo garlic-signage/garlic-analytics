@@ -10,15 +10,15 @@ The foundation: accept normalized proof-of-play events and store them safely.
 - Event format for proof-of-play
 - Schema with raw event table, hourly aggregates and TTL
 - Migration runner for idempotent schema files
-- API key authentication with tenant separation and scopes
-- `POST /v1/events` with validation and idempotency
+- API key authentication
+- First module PlayLog: ingest via `POST /v1/playlog` with validation and idempotency
 - `GET /v1/health`
 
 ## 0.2 Reports
 
 Make the collected data usable.
 
-- Stats endpoints for proof-of-play (plays and duration per player, media and time range)
+- Read endpoints for proof-of-play (plays and duration per player, media and time range, paginated)
 - Time zone aware queries based on hourly aggregates
 - API documentation
 
@@ -36,7 +36,6 @@ Extend beyond proof-of-play.
 Let players upload directly without a CMS in between.
 
 - Collector container with WebDAV and HTTP PUT upload
-- Player access per tenant
 - Adapter interface
 - First adapter for SMIL player reports
 - File processing with inbox, processed and error handling

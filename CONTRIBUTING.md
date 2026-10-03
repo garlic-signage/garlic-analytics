@@ -74,7 +74,7 @@ Follow the style of the existing files:
 
 ## Database schema
 
-- The schema is defined by SQL files in `migrations/`, executed in file name order by `php bin/migrate.php`.
+- The schema is defined by SQL files in `migrations/`, executed in file name order by `bin/console db:migrate`.
 - The runner executes every file on every run. All statements must be idempotent: `CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS` and so on.
 - Do not change a statement that has already been released. Add a new file instead, otherwise existing installations never receive the change.
 - Statements are split at every `;` and only full-line `--` comments are removed. Do not use `;` inside string literals and do not put comments behind code on the same line.
