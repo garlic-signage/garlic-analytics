@@ -27,6 +27,7 @@ use App\Collector\Ingest\HttpIngestClient;
 use App\Collector\EventLogRecord;
 use App\Collector\LogType;
 use App\Collector\PlayLogRecord;
+use App\Collector\SystemLogRecord;
 use ArrayObject;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ConnectException;
@@ -35,7 +36,6 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -112,11 +112,17 @@ class HttpIngestClientTest extends TestCase
     }
 
     #[Group('units')]
-    public function testTypeWithoutEndpointIsRefusedBeforeAnyRequest(): void
+    public function testSystemReportsGoToTheSystemLogEndpoint(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $records = [new SystemLogRecord('p1', '2026-10-03T15:30:27+02:00', '2026-10-03T03:00:00+02:00', 'MEZ', 100, 40, null, null, null, null)];
 
-        $this->client([])->send(LogType::System, $this->records());
+        $this->client([new Response(201)])->send(LogType::System, $records);
+
+        static::assertSame('http://api.test/v1/systemlog', (string) $this->lastRequest()->getUri());
+        static::assertSame(
+            ['events' => [['player_id' => 'p1', 'reported_at' => '2026-10-03T15:30:27+02:00', 'system_start' => '2026-10-03T03:00:00+02:00', 'time_zone' => 'MEZ', 'disk_total' => 100, 'disk_free' => 40]]],
+            json_decode((string) $this->lastRequest()->getBody(), true)
+        );
     }
 
     #[Group('units')]

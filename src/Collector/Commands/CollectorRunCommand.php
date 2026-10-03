@@ -125,7 +125,7 @@ class CollectorRunCommand extends Command
         {
             FileStatus::Parsed   => $output->writeln('parsed   ' . $name . $detail),
             FileStatus::Sent     => $output->writeln('sent     ' . $name . $detail),
-            FileStatus::SkippedUnknown, FileStatus::SkippedUnsupported => $output->writeln('skipped  ' . $name . '  (' . $message . ')'),
+            FileStatus::SkippedUnknown => $output->writeln('skipped  ' . $name . '  (' . $message . ')'),
             FileStatus::Failed   => $errorOutput->writeln('<error>failed   ' . $name . '  ' . $message . '</error>'),
             FileStatus::Rejected => $errorOutput->writeln('<error>rejected ' . $name . '  moved to error/: ' . $message . '</error>'),
             FileStatus::Retry    => $errorOutput->writeln('<error>retry    ' . $name . '  stays in upload/, run stopped: ' . $message . '</error>'),
@@ -140,7 +140,7 @@ class CollectorRunCommand extends Command
         $count = static fn(FileStatus ...$statuses): int => count(array_filter($results, static fn(FileResult $r): bool => in_array($r->status, $statuses, true)));
         $events  = array_sum(array_map(static fn(FileResult $r): int => $r->events, $results));
         $batches = array_sum(array_map(static fn(FileResult $r): int => $r->batches, $results));
-        $skipped = $count(FileStatus::SkippedUnknown, FileStatus::SkippedUnsupported);
+        $skipped = $count(FileStatus::SkippedUnknown);
 
         if ($dryRun)
         {

@@ -121,7 +121,7 @@ bin/console collector:run [--device=<name>] [--type=<type>] [--file=<name>] [--d
 
 Reads the files devices uploaded, sends them to the ingest API and moves them. Run it from cron, the collector is not an API itself.
 
-Every device family has its own upload directory, `var/collector/<device>/upload/`. The directory decides which adapter reads a file, the adapter decides the type by the file name. For `smil` these are `playlog-*.xml`, `event-*.xml` and `system-*.xml`. Play logs go to `POST /v1/playlog`, events to `POST /v1/eventlog`. Files of the other types (`system`) and files with an unknown name stay in `upload/`.
+Every device family has its own upload directory, `var/collector/<device>/upload/`. The directory decides which adapter reads a file, the adapter decides the type by the file name. For `smil` these are `playlog-*.xml`, `event-*.xml` and `system-*.xml`. Play logs go to `POST /v1/playlog`, events to `POST /v1/eventlog` and system reports to `POST /v1/systemlog`. Files with an unknown name stay in `upload/`.
 
 | Option | |
 |---|---|

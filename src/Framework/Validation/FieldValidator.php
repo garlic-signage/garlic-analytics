@@ -49,6 +49,26 @@ readonly class FieldValidator
     }
 
     /**
+     * Checks a JSON integer (a string like "5" is no integer).
+     */
+    public function integer(mixed $value, int $min, int $max): ?string
+    {
+        if ($value === null)
+            return 'is required';
+
+        if (!is_int($value))
+            return 'must be an integer';
+
+        if ($value < $min)
+            return 'must not be less than ' . $min;
+
+        if ($value > $max)
+            return 'must not be greater than ' . $max;
+
+        return null;
+    }
+
+    /**
      * Parses ISO 8601 to the second with an offset ("2026-10-03T15:30:27+02:00", "2026-10-03T13:30:27Z")
      * and returns it in UTC. Fractions of seconds are not accepted. Returns null if the value is invalid.
      */

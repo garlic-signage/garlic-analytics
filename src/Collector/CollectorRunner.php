@@ -41,7 +41,7 @@ use InvalidArgumentException;
  * Blocks are cut the same way every time, so blocks that were already accepted before a failure
  * are dropped by the API when the file is sent again.
  *
- * Only the types with an ingest endpoint are handled (see LogType::endpoint()). Files of other types, or with an unknown name, stay where they are.
+ * Files with an unknown name stay where they are.
  * With $dryRun nothing is sent or moved, the files are only read.
  */
 readonly class CollectorRunner
@@ -90,8 +90,8 @@ readonly class CollectorRunner
                 if ($type !== null && $fileType !== $type)
                     continue;
 
-                if ($fileType === null || $fileType->endpoint() === null)
-                    $result = $this->skipped($name, $baseName, $fileType);
+                if ($fileType === null)
+                    $result = new FileResult($name, $baseName, null, FileStatus::SkippedUnknown, message: 'unknown file name');
                 else
                     $result = $dryRun ? $this->inspect($name, $source, $path, $fileType) : $this->process($name, $source, $path, $fileType);
                 $results[] = $result;
@@ -102,14 +102,6 @@ readonly class CollectorRunner
         }
 
         return $results;
-    }
-
-    private function skipped(string $device, string $fileName, ?LogType $type): FileResult
-    {
-        if ($type === null)
-            return new FileResult($device, $fileName, null, FileStatus::SkippedUnknown, message: 'unknown file name');
-
-        return new FileResult($device, $fileName, $type, FileStatus::SkippedUnsupported, message: 'no ingest for ' . $type->value . ' yet');
     }
 
     private function inspect(string $device, DeviceSource $source, string $path, LogType $type): FileResult

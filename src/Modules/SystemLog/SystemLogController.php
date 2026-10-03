@@ -19,28 +19,11 @@
 */
 declare(strict_types=1);
 
-namespace App\Collector\Device;
+namespace App\Modules\SystemLog;
 
-use App\Collector\Exceptions\ParseException;
-use App\Collector\LogType;
-use App\Collector\RecordInterface;
+use App\Framework\Ingest\IngestController;
 
 /**
- * Translates the files of one device family into normalized records.
- *
- * Which adapter reads a file follows from its directory (see DeviceSource), the adapter itself
- * only tells the type of a file and parses it.
+ * POST /v1/systemlog: takes a batch of system reports.
  */
-interface DeviceAdapterInterface
-{
-    /**
-     * Type of a file by its name, null if the name is not known to this device.
-     */
-    public function classify(string $fileName): ?LogType;
-
-    /**
-     * @return list<RecordInterface>
-     * @throws ParseException
-     */
-    public function parse(LogType $type, string $filePath): array;
-}
+readonly class SystemLogController extends IngestController {}

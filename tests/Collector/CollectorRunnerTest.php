@@ -27,6 +27,7 @@ use App\Collector\Device\DeviceSource;
 use App\Collector\Device\Smil\SmilAdapter;
 use App\Collector\Device\Smil\SmilEventLogParser;
 use App\Collector\Device\Smil\SmilPlayLogParser;
+use App\Collector\Device\Smil\SmilSystemLogParser;
 use App\Collector\DirectoryScanner;
 use App\Collector\Exceptions\RejectedIngestException;
 use App\Collector\Exceptions\RetryableIngestException;
@@ -64,7 +65,12 @@ class CollectorRunnerTest extends TestCase
             ['warning', '2026-10-03T10:00:02+02:00', 'ContentManager', 'FETCH_FAILED', []],
         ]));
         $this->put('event-broken.xml', '<report><player id="p">', 3005);
-        $this->put('system-a.xml', '<report/>', 3003);
+        $this->put('system-a.xml', self::systemLogXml('player-1', '2026-10-03T10:05:00+0200', [
+            'systemStartTime' => '2026-10-03T03:00:00+0200',
+            'timeZone'        => 'MEZ',
+            'totalCapacity'   => '100',
+            'totalFreeSpace'  => '40',
+        ]), 3003);
         $this->put('notes.txt', 'hello', 3004);
     }
 
@@ -82,7 +88,7 @@ class CollectorRunnerTest extends TestCase
     private function runner(int $minAge = 60): CollectorRunner
     {
         return new CollectorRunner(
-            ['smil' => new DeviceSource(new SmilAdapter(new SmilPlayLogParser(), new SmilEventLogParser()), $this->upload)],
+            ['smil' => new DeviceSource(new SmilAdapter(new SmilPlayLogParser(), new SmilEventLogParser(), new SmilSystemLogParser()), $this->upload)],
             new DirectoryScanner(),
             new BatchSplitter(2),
             $this->ingest,
@@ -127,7 +133,7 @@ class CollectorRunnerTest extends TestCase
             'notes.txt'          => 'skipped-unknown',
             'playlog-a.xml'      => 'parsed',
             'playlog-broken.xml' => 'failed',
-            'system-a.xml'       => 'skipped-unsupported',
+            'system-a.xml'       => 'parsed',
         ], $statuses);
         static::assertSame($before, $this->names($this->upload));
         static::assertSame([], $this->ingest->sent);
@@ -156,6 +162,21 @@ class CollectorRunnerTest extends TestCase
             $this->ingest->sent[0][0]->toArray()
         );
         static::assertSame(['event-a.xml'], $this->names($this->base . '/processed'));
+    }
+
+    #[Group('units')]
+    public function testSystemReportIsSentToTheSystemEndpoint(): void
+    {
+        $results = $this->runner()->run(fileName: 'system-a.xml');
+
+        static::assertSame(['system-a.xml' => 'sent'], $this->statuses($results));
+        static::assertSame(1, $results[0]->events);
+        static::assertSame([LogType::System], $this->ingest->types);
+        static::assertSame(
+            ['player_id' => 'player-1', 'reported_at' => '2026-10-03T10:05:00+02:00', 'system_start' => '2026-10-03T03:00:00+02:00', 'time_zone' => 'MEZ', 'disk_total' => 100, 'disk_free' => 40],
+            $this->ingest->sent[0][0]->toArray()
+        );
+        static::assertSame(['system-a.xml'], $this->names($this->base . '/processed'));
     }
 
     #[Group('units')]
@@ -287,13 +308,11 @@ class CollectorRunnerTest extends TestCase
     }
 
     #[Group('units')]
-    public function testOtherTypesAndUnknownFilesStayInUpload(): void
+    public function testUnknownFilesStayInUpload(): void
     {
         $this->runner()->run();
 
-        $left = $this->names($this->upload);
-        static::assertContains('system-a.xml', $left);
-        static::assertContains('notes.txt', $left);
+        static::assertContains('notes.txt', $this->names($this->upload));
     }
 
     #[Group('units')]
@@ -313,8 +332,9 @@ class CollectorRunnerTest extends TestCase
     {
         $results = $this->runner()->run(type: LogType::System);
 
-        static::assertSame(['system-a.xml' => 'skipped-unsupported'], $this->statuses($results));
-        static::assertSame([], $this->ingest->sent);
+        static::assertSame(['system-a.xml' => 'sent'], $this->statuses($results));
+        static::assertContains('playlog-a.xml', $this->names($this->upload));
+        static::assertContains('event-a.xml', $this->names($this->upload));
     }
 
     #[Group('units')]

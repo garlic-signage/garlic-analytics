@@ -38,8 +38,8 @@ abstract readonly class BatchRepository
      * is dropped, also in the tables of materialized views. Another batch with the same rows
      * in another order or size counts as new.
      *
-     * @param list<list<int|string|array<string,string>>> $rows values in the order of $columns
-     * @param list<string>                                $columns
+     * @param list<list<int|string|array<string,string>|null>> $rows values in the order of $columns
+     * @param list<string>                                     $columns
      * @throws DatabaseException
      * @throws JsonException
      */

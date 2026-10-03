@@ -36,10 +36,11 @@ interface ClickHouseClientInterface
      * With a deduplication token a repeated insert with the same token is dropped, in the table
      * and in the tables of its materialized views. The same token with other rows is dropped too.
      *
-     * A value can be a map (array<string,string>) for a column of type Map(String, String).
+     * A value can be a map (array<string,string>) for a column of type Map(String, String), or null
+     * for a Nullable column.
      *
-     * @param list<list<int|string|array<string,string>>> $rows    values in the order of $columns
-     * @param list<string>                                $columns
+     * @param list<list<int|string|array<string,string>|null>> $rows    values in the order of $columns
+     * @param list<string>                                     $columns
      * @throws DatabaseException
      */
     public function insert(string $table, array $rows, array $columns, ?string $deduplicationToken = null): void;

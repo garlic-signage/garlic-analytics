@@ -51,7 +51,7 @@ CMS -> GET /v1/<module>/... (API) -> displays results, resolves IDs to names and
 
 ## Modules
 
-- Code is organized in modules under `src/Modules/<Module>/`: one module per event type (e.g. `PlayLog`, `EventLog`, `PlayerConnect`, `SystemReport`) plus `Auth` and `Health`.
+- Code is organized in modules under `src/Modules/<Module>/`: one module per event type (e.g. `PlayLog`, `EventLog`, `PlayerConnect`, `SystemLog`) plus `Auth` and `Health`.
 - Each module has a controller for its routes, the validation of its events and a repository with the inserts and queries for its tables.
 - Concerns shared by all modules (authentication, gzip, batch ID as deduplication token, limit of events per request) are implemented once as middleware or in `src/Framework/`, not repeated in every module.
 - The ingest of all modules shares its parts, a module only adds what is specific to its event type:
@@ -84,7 +84,24 @@ The body of every ingest request is `{"events": [...]}`. Times are ISO 8601 to t
 | `event_source`, `event_name` | Strings, up to 128 characters |
 | `metadata` | Optional object with string values: up to 20 entries, key up to 64, value up to 1024 characters. Stored as an empty map if missing. |
 
-Example:
+**`POST /v1/systemlog`** (table `system_log`, kept 6 months, `max_age_days` 180)
+
+One entry is one system report.
+
+| Field | Description |
+|---|---|
+| `player_id` | String, up to 128 characters |
+| `reported_at` | Creation time of the report. Checked against `max_age_days` and the future. |
+| `system_start` | Boot time of the player. Not checked for age, a player can run longer than the retention. |
+| `time_zone` | String, up to 64 characters, stored as sent (players send e.g. `MEZ` as well as `Europe/Berlin`) |
+| `disk_total`, `disk_free` | Integers (bytes), 0 or more |
+| `cpu_usage` | Optional integer, 0 to 100 |
+| `memory_total`, `memory_used` | Optional integers (bytes), 0 or more |
+| `hdmi_output` | Optional string, up to 64 characters |
+
+Optional values a player does not report are stored as `NULL` (`hdmi_output`: empty). The values are not compared with each other, a player with a measuring error keeps its report.
+
+Example for `POST /v1/eventlog`:
 
 ```json
 {"events": [{
@@ -113,8 +130,9 @@ Example:
 - Accepts uploads via WebDAV or HTTP PUT and stores them in `inbox/`.
 - Normalization is done by adapters, one per player format. An adapter translates a source-specific format (e.g. the XML report of a specific player) into the event format.
 - Sends normalized events to the API with its own API key (scope `ingest`).
-- The type of a file follows from its name (`LogType`: `playlog`, `event`, `system`) and decides the endpoint (`LogType::endpoint()`). Play logs and events are sent so far, `system` stays in `upload/` until its ingest exists.
+- The type of a file follows from its name (`LogType`: `playlog`, `event`, `system`) and decides the endpoint (`LogType::endpoint()`). Play logs (`/v1/playlog`), events (`/v1/eventlog`) and system reports (`/v1/systemlog`) are sent.
 - Every type has a record class (`RecordInterface`: `PlayLogRecord`, `EventLogRecord`) in the format of its endpoint. `IngestClientInterface::send(LogType, records)` and `DeviceAdapterInterface::parse(LogType, file)` work for all types, a new type does not need new methods.
+- Of a system report only the values of `system_log` are sent. `network` (MAC and IP addresses), `configuration` (it contains passwords) and `hardwareInfo` never leave the collector. The adapter also normalizes the format of the player: the offset `+0200` becomes `+02:00`, a cpu usage `31%` becomes `31`.
 - The SMIL adapter reads the files with one parser per type on a common base (`SmilReportParser`). A file is read completely before anything is sent: one broken event (a missing field, broken XML) sends the whole file to `error/`.
 - File processing:
   - Directories on the same volume: `inbox/`, `processed/`, `error/`. Files are moved with `rename()` (atomic).

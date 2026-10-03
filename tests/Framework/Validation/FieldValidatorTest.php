@@ -88,4 +88,26 @@ class FieldValidatorTest extends TestCase
             'garbage'          => ['yesterday'],
         ];
     }
+
+    #[Group('units')]
+    public function testIntegerAcceptsValuesWithinLimits(): void
+    {
+        $validator = new FieldValidator();
+
+        static::assertNull($validator->integer(0, 0, 100));
+        static::assertNull($validator->integer(100, 0, 100));
+    }
+
+    #[Group('units')]
+    public function testIntegerRejectsMissingWrongTypeAndOutOfRange(): void
+    {
+        $validator = new FieldValidator();
+
+        static::assertSame('is required', $validator->integer(null, 0, 100));
+        static::assertSame('must be an integer', $validator->integer('5', 0, 100));
+        static::assertSame('must be an integer', $validator->integer(5.5, 0, 100));
+        static::assertSame('must be an integer', $validator->integer(true, 0, 100));
+        static::assertSame('must not be less than 0', $validator->integer(-1, 0, 100));
+        static::assertSame('must not be greater than 100', $validator->integer(101, 0, 100));
+    }
 }

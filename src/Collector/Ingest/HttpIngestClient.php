@@ -27,11 +27,10 @@ use App\Collector\LogType;
 use App\Collector\RecordInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
-use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
 
 /**
- * Sends the records to the endpoint of their type (POST /v1/playlog, POST /v1/eventlog) of the ingest API with the API key of the collector.
+ * Sends the records to the endpoint of their type (POST /v1/playlog, /v1/eventlog, /v1/systemlog) of the ingest API with the API key of the collector.
  *
  * Only 400, 413 and 422 mean the data is wrong. Every other answer that is not 2xx leaves the file
  * where it is: 401, 403, 404 and 405 point to a wrong key, rights or URL, which must not send
@@ -58,12 +57,11 @@ readonly class HttpIngestClient implements IngestClientInterface
 
     public function send(LogType $type, array $records): void
     {
-        $endpoint = $type->endpoint() ?? throw new InvalidArgumentException('There is no ingest endpoint for ' . $type->value);
         $this->ensureConfigured();
 
         try
         {
-            $response = $this->http->request('POST', rtrim($this->baseUrl, '/') . $endpoint, [
+            $response = $this->http->request('POST', rtrim($this->baseUrl, '/') . $type->endpoint(), [
                 'headers'         => ['Authorization' => 'Bearer ' . $this->apiKey, 'Accept' => 'application/json'],
                 'json'            => ['events' => array_map(static fn(RecordInterface $record): array => $record->toArray(), $records)],
                 'http_errors'     => false,

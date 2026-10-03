@@ -58,6 +58,15 @@ class ClickHouseClientTest extends TestCase
     }
 
     #[Group('units')]
+    public function testInsertWritesNullForNullableColumns(): void
+    {
+        $driver = $this->createMock(Client::class);
+        $driver->expects($this->once())->method('write')->with("INSERT INTO `t` (`a`,`b`) VALUES ('x',NULL),('y',5)", [], true, []);
+
+        new ClickHouseClient($driver)->insert('t', [['x', null], ['y', 5]], ['a', 'b']);
+    }
+
+    #[Group('units')]
     public function testInsertWithoutTokenSendsNoSettings(): void
     {
         $driver = $this->createMock(Client::class);

@@ -104,9 +104,10 @@ SELECT
 FROM player_connect
 GROUP BY hour, player_id;
 
---- history of System reports
+-- System reports, one rr report
 -- based on https://garlic-signage.com/garlic-player/docs/essentials/logs-reports/#systemreport_format
-CREATE TABLE IF NOT EXISTS  system_report
+-- Kept for six months, no aggregate. Not every player reports cpu, memory and hdmi, they stay NULL (hdmi_output empty).
+CREATE TABLE IF NOT EXISTS system_log
 (
     player_id     LowCardinality(String),
     reported_at   DateTime('UTC') CODEC(Delta, ZSTD),
@@ -114,12 +115,11 @@ CREATE TABLE IF NOT EXISTS  system_report
     time_zone     LowCardinality(String),
     disk_total    UInt64,
     disk_free     UInt64,
-    cpu_usage     UInt8,
-    memory_total  UInt64,
-    memory_used   UInt64,
+    cpu_usage     Nullable(UInt8),
+    memory_total  Nullable(UInt64),
+    memory_used   Nullable(UInt64),
     hdmi_output   LowCardinality(String),
-    temperature   Nullable(Float32),
-    extra         Map(LowCardinality(String), Float64)
+    received_at   DateTime('UTC') DEFAULT now()
 )
     ENGINE = MergeTree
         PARTITION BY toYYYYMM(reported_at)

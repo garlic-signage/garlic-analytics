@@ -24,13 +24,12 @@ namespace App\Collector;
 enum FileStatus: string
 {
     // dry run
-    case Parsed             = 'parsed';
-    case Failed             = 'failed';
+    case Parsed         = 'parsed';
+    case Failed         = 'failed';
     // real run
-    case Sent               = 'sent';
-    case Rejected           = 'rejected';
-    case Retry              = 'retry';
+    case Sent           = 'sent';
+    case Rejected       = 'rejected';
+    case Retry          = 'retry';
     // both
-    case SkippedUnknown     = 'skipped-unknown';
-    case SkippedUnsupported = 'skipped-unsupported';
+    case SkippedUnknown = 'skipped-unknown';
 }

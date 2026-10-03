@@ -31,15 +31,15 @@ enum LogType: string
     case System  = 'system';
 
     /**
-     * Path of the ingest endpoint, null if there is none yet.
+     * Path of the ingest endpoint.
      */
-    public function endpoint(): ?string
+    public function endpoint(): string
     {
         return match ($this)
         {
             self::PlayLog => '/v1/playlog',
             self::Event   => '/v1/eventlog',
-            self::System  => null,
+            self::System  => '/v1/systemlog',
         };
     }
 }

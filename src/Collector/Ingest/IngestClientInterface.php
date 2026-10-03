@@ -25,7 +25,6 @@ use App\Collector\Exceptions\RejectedIngestException;
 use App\Collector\Exceptions\RetryableIngestException;
 use App\Collector\LogType;
 use App\Collector\RecordInterface;
-use InvalidArgumentException;
 
 /**
  * The way into the ingest API. The collector only knows this interface, so the API can live elsewhere
@@ -44,7 +43,6 @@ interface IngestClientInterface
      * Sends one block of records of a type to its endpoint. Returns normally only if the API accepted it.
      *
      * @param list<RecordInterface> $records
-     * @throws InvalidArgumentException the type has no endpoint
      * @throws RejectedIngestException  the data is invalid
      * @throws RetryableIngestException try again later
      */

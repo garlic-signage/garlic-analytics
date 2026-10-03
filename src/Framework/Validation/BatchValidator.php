@@ -107,6 +107,26 @@ readonly class BatchValidator
     }
 
     /**
+     * Checks an integer field of an event, 0 up to $max. An optional field may be missing or null.
+     *
+     * @param array<array-key,mixed> $item
+     * @param array<string,string>   $errors collects the messages
+     * @return bool true if the field is valid
+     */
+    public function integer(array $item, string $name, int $max, bool $required, string $prefix, array &$errors): bool
+    {
+        $value = $item[$name] ?? null;
+        if ($value === null && !$required)
+            return true;
+
+        $error = $this->fields->integer($value, 0, $max);
+        if ($error !== null)
+            $errors[$prefix . '.' . $name] = $error;
+
+        return $error === null;
+    }
+
+    /**
      * @param array<string,string> $errors collects the messages
      */
     public function time(mixed $value, string $field, array &$errors): ?DateTimeImmutable

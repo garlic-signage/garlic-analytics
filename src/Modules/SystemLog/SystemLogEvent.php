@@ -19,28 +19,26 @@
 */
 declare(strict_types=1);
 
-namespace App\Collector\Device;
+namespace App\Modules\SystemLog;
 
-use App\Collector\Exceptions\ParseException;
-use App\Collector\LogType;
-use App\Collector\RecordInterface;
+use DateTimeImmutable;
 
 /**
- * Translates the files of one device family into normalized records.
- *
- * Which adapter reads a file follows from its directory (see DeviceSource), the adapter itself
- * only tells the type of a file and parses it.
+ * One validated system report. Times are in UTC. Values the player does not report are null
+ * (hdmiOutput: empty).
  */
-interface DeviceAdapterInterface
+readonly class SystemLogEvent
 {
-    /**
-     * Type of a file by its name, null if the name is not known to this device.
-     */
-    public function classify(string $fileName): ?LogType;
-
-    /**
-     * @return list<RecordInterface>
-     * @throws ParseException
-     */
-    public function parse(LogType $type, string $filePath): array;
+    public function __construct(
+        public string            $playerId,
+        public DateTimeImmutable $reportedAt,
+        public DateTimeImmutable $systemStart,
+        public string            $timeZone,
+        public int               $diskTotal,
+        public int               $diskFree,
+        public ?int              $cpuUsage,
+        public ?int              $memoryTotal,
+        public ?int              $memoryUsed,
+        public string            $hdmiOutput
+    ) {}
 }

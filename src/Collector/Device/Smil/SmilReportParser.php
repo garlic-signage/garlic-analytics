@@ -49,6 +49,14 @@ abstract readonly class SmilReportParser
     abstract protected function description(): string;
 
     /**
+     * Called for every element outside of an item (e.g. the report date). Collects its data into $report,
+     * which every item of the file gets as its start of $fields. Nothing by default.
+     *
+     * @param array<string,string> $report
+     */
+    protected function collectReport(XMLReader $reader, string $name, array &$report): void {}
+
+    /**
      * Called for every element inside an item. Collects its data into $fields.
      *
      * @param array<string,string> $fields
@@ -98,6 +106,7 @@ abstract readonly class SmilReportParser
     private function read(XMLReader $reader): array
     {
         $records  = [];
+        $report   = [];
         $playerId = null;
         $hasLog   = false;
         $current  = null;
@@ -114,12 +123,15 @@ abstract readonly class SmilReportParser
 
                 if ($name === 'player')
                     $playerId ??= $reader->getAttribute('id');
-                elseif ($name === $this->logElement())
+
+                if ($name === $this->logElement())
                     $hasLog = true;
                 elseif ($name === $this->itemElement() && $hasLog)
-                    $current = [];
+                    $current = $report;
                 elseif ($current !== null)
                     $this->collect($reader, $name, $current);
+                else
+                    $this->collectReport($reader, $name, $report);
             }
             elseif ($reader->nodeType === XMLReader::END_ELEMENT && $current !== null && $reader->localName === $this->itemElement())
             {

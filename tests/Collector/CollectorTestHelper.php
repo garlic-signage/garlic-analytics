@@ -93,4 +93,23 @@ trait CollectorTestHelper
             . '<report xmlns="http://schemas.garlic-player.com/gapi-1.0"><date>2026-10-03T14:35:25Z</date><version>1.0</version>'
             . '<player id="' . $playerId . '"><playerEventLog>' . "\n" . $items . '</playerEventLog></player></report>';
     }
+
+    /**
+     * Like a report of a player: network and configuration are in it and must not be taken.
+     *
+     * @param array<string,string> $info elements of systemInfo by name, e.g. totalCapacity
+     */
+    private static function systemLogXml(string $playerId, string $date, array $info): string
+    {
+        $elements = '';
+        foreach ($info as $name => $value)
+            $elements .= "<$name>$value</$name>";
+
+        return '<?xml version="1.0" encoding="UTF-8"?>'
+            . '<report xmlns="http://schemas.adfotain.org/adapi-1.0"> <date>' . $date . '</date> <version>1.0.385</version> '
+            . '<player id="' . $playerId . '"><systemInfo>' . $elements
+            . '<network><interface id="eth0"><mac>80:e4:da:85:17:2e</mac><ip>192.168.1.113</ip></interface></network>'
+            . '<configuration><modelInfo><prop name="appVersion" value="1.0.385" /><prop name="PCB" value="app_password: secret," /></modelInfo></configuration>'
+            . '</systemInfo><hardwareInfo><hardware id="display:0"><prop name="modelName" value="Screen" /></hardware></hardwareInfo></player></report>';
+    }
 }
