@@ -39,3 +39,4 @@
 /.phpunit.result.cache
 /PROJECT-de.md
 /var/
+/public/clover/

@@ -3,7 +3,7 @@ type: php
 docroot: public
 php_version: "8.4"
 webserver_type: apache-fpm
-xdebug_enabled: false
+xdebug_enabled: true
 additional_hostnames: []
 additional_fqdns: []
 database:
@@ -17,7 +17,11 @@ web_environment:
     - CLICKHOUSE_HOST=clickhouse
     - CLICKHOUSE_PORT=8123
     - CLICKHOUSE_USER=analytics
+    - XDEBUG_MODE=debug,coverage
+    - XDEBUG_CONFIG=client_host=host.docker.internal
+    - XDEBUG_CLIENT_PORT=9003
 nodejs_version: "24"
+webimage_extra_packages: [php8.4-xdebug]
 corepack_enable: false
 
 # Key features of DDEV's config.yaml:
