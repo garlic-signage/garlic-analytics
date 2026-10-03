@@ -48,7 +48,7 @@ GROUP BY hour, content_id, player_id;
 -- Player events (playerEventLog records)
 -- based on https://garlic-signage.com/garlic-player/docs/essentials/logs-reports/#eventlog_format
 -- Kept for six months, no aggregate
-CREATE TABLE IF NOT EXISTS player_event
+CREATE TABLE IF NOT EXISTS event_log
 (
     player_id    LowCardinality(String),
     event_time   DateTime('UTC'),
