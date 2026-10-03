@@ -25,11 +25,111 @@ use App\Framework\Database\ClickHouseClient;
 use App\Framework\Exceptions\DatabaseException;
 use ClickHouseDB\Client;
 use ClickHouseDB\Exception\QueryException;
+use ClickHouseDB\Settings;
+use ClickHouseDB\Statement;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 class ClickHouseClientTest extends TestCase
 {
+    #[Group('units')]
+    public function testEnsureDatabaseDoesNothingIfTheDatabaseExists(): void
+    {
+        $driver = $this->createMock(Client::class);
+        $driver->expects($this->once())->method('write')->with('SELECT 1');
+
+        new ClickHouseClient($driver)->ensureDatabase();
+    }
+
+    #[Group('units')]
+    public function testEnsureDatabaseCreatesAMissingDatabaseInTheContextOfDefault(): void
+    {
+        $settings = new Settings();
+        $settings->database('my_analytics');
+
+        $driver = static::createStub(Client::class);
+        $driver->method('settings')->willReturn($settings);
+        $statements = [];
+        $driver->method('write')->willReturnCallback(
+            function (string $sql) use (&$statements)
+            {
+                $statements[] = $sql;
+                if ($sql === 'SELECT 1')
+                    throw new QueryException("Database my_analytics does not exist. (UNKNOWN_DATABASE)\nIN:SELECT 1");
+
+                return static::createStub(Statement::class);
+            }
+        );
+        $databases = [];
+        $driver->method('database')->willReturnCallback(
+            static function (string $db) use (&$databases, $driver): Client
+            {
+                $databases[] = $db;
+                return $driver;
+            }
+        );
+
+        new ClickHouseClient($driver)->ensureDatabase();
+
+        static::assertSame(['SELECT 1', 'CREATE DATABASE IF NOT EXISTS `my_analytics`'], $statements);
+        static::assertSame(['default', 'my_analytics'], $databases); // and back to the own database
+    }
+
+    #[Group('units')]
+    public function testEnsureDatabaseReportsWhyTheDatabaseCanNotBeCreated(): void
+    {
+        $settings = new Settings();
+        $settings->database('my_analytics');
+
+        $driver = static::createStub(Client::class);
+        $driver->method('settings')->willReturn($settings);
+        $driver->method('write')->willReturnCallback(
+            static function (string $sql): Statement
+            {
+                throw new QueryException($sql === 'SELECT 1' ? 'Database my_analytics does not exist. (UNKNOWN_DATABASE)' : "Not enough privileges. (ACCESS_DENIED)\nIN:CREATE DATABASE");
+            }
+        );
+
+        try
+        {
+            new ClickHouseClient($driver)->ensureDatabase();
+            static::fail('DatabaseException expected');
+        }
+        catch (DatabaseException $e)
+        {
+            static::assertStringContainsString('Database "my_analytics" does not exist and can not be created: Not enough privileges. (ACCESS_DENIED)', $e->getMessage());
+            static::assertStringNotContainsString('IN:CREATE', $e->getMessage());
+        }
+    }
+
+    #[Group('units')]
+    public function testEnsureDatabaseRefusesAnInvalidName(): void
+    {
+        $settings = new Settings();
+        $settings->database('bad`name');
+
+        $driver = $this->createMock(Client::class);
+        $driver->method('settings')->willReturn($settings);
+        $driver->expects($this->once())->method('write')->willThrowException(new QueryException('Database bad does not exist. (UNKNOWN_DATABASE)'));
+
+        $this->expectException(DatabaseException::class);
+        $this->expectExceptionMessageIsOrContains('The database name "bad`name" is not valid');
+
+        new ClickHouseClient($driver)->ensureDatabase();
+    }
+
+    #[Group('units')]
+    public function testEnsureDatabaseReportsOtherErrors(): void
+    {
+        $driver = static::createStub(Client::class);
+        $driver->method('write')->willThrowException(new QueryException("Connection refused\nmore"));
+
+        $this->expectException(DatabaseException::class);
+        $this->expectExceptionMessageIsOrContains('ClickHouse is not usable: Connection refused');
+
+        new ClickHouseClient($driver)->ensureDatabase();
+    }
+
     #[Group('units')]
     public function testInsertBuildsOneStatementWithDeduplicationSettings(): void
     {

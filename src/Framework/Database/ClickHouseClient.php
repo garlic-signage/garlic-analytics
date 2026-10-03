@@ -27,6 +27,7 @@ use ClickHouseDB\Client;
 use ClickHouseDB\Exception\ClickHouseException;
 use ClickHouseDB\Query\Expression\Raw;
 use ClickHouseDB\Quote\FormatLine;
+use Throwable;
 
 readonly class ClickHouseClient implements ClickHouseClientInterface
 {
@@ -40,6 +41,57 @@ readonly class ClickHouseClient implements ClickHouseClientInterface
     public function execute(string $sql): void
     {
         $this->client->write($sql);
+    }
+
+    public function ensureDatabase(): void
+    {
+        try
+        {
+            $this->client->write('SELECT 1');
+            return;
+        }
+        catch (ClickHouseException $e)
+        {
+            $message = $this->firstLine($e);
+            if (!str_contains($message, 'UNKNOWN_DATABASE'))
+                throw new DatabaseException('ClickHouse is not usable: ' . $message, 0, $e);
+        }
+
+        $this->createDatabase();
+    }
+
+    /**
+     * Every request names the database, so the statement is sent in the context of "default".
+     *
+     * @throws DatabaseException
+     */
+    private function createDatabase(): void
+    {
+        $configured = $this->client->settings()->getDatabase();
+        $database   = is_string($configured) ? $configured : '';
+        if (preg_match('/^[A-Za-z0-9_]+$/', $database) !== 1)
+            throw new DatabaseException('The database name "' . $database . '" is not valid, use letters, digits and underscore.');
+
+        try
+        {
+            $this->client->database('default');
+            $this->client->write('CREATE DATABASE IF NOT EXISTS `' . $database . '`');
+        }
+        catch (ClickHouseException $e)
+        {
+            throw new DatabaseException('Database "' . $database . '" does not exist and can not be created: ' . $this->firstLine($e), 0, $e);
+        }
+        finally
+        {
+            $this->client->database($database);
+        }
+    }
+
+    private function firstLine(Throwable $e): string
+    {
+        $line = strtok($e->getMessage(), "\n");
+
+        return $line === false ? 'unknown error' : $line;
     }
 
     public function insert(string $table, array $rows, array $columns, ?string $deduplicationToken = null): void

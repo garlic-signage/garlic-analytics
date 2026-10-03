@@ -31,6 +31,8 @@ bin/console db:migrate
 
 Runs all `migrations/*.sql` files in file name order and prints `executed: <file>` for each one. The files are executed on every run, so all statements are idempotent (`CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`). Running the command repeatedly is safe, and new tables and columns reach existing installations the same way.
 
+Before the first file it checks that ClickHouse is reachable and that the database from `CLICKHOUSE_DATABASE` exists. If the database is missing, the command creates it (`CREATE DATABASE IF NOT EXISTS`). The user needs the right to create databases for that. Without it the command stops with the message from ClickHouse, then an administrator creates the database once.
+
 On failure (for example ClickHouse is not reachable) it prints `Migration failed: <message>` and stops with exit code `1`. Files that ran before the failing statement stay applied.
 
 The connection is taken from the `CLICKHOUSE_*` variables in `.env`, see `.env.dist`. Rules for writing schema files are in [CONTRIBUTING.md](../CONTRIBUTING.md#database-schema).

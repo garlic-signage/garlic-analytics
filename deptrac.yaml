@@ -51,6 +51,11 @@ deptrac:
         - type: classLike
           value: ^App\\Modules\\SystemLog\\.*
 
+    - name: ConnectLog
+      collectors:
+        - type: classLike
+          value: ^App\\Modules\\ConnectLog\\.*
+
     - name: Collector
       collectors:
         - type: classLike
@@ -80,6 +85,9 @@ deptrac:
       - Framework
       - Database
     SystemLog:
+      - Framework
+      - Database
+    ConnectLog:
       - Framework
       - Database
     Collector:

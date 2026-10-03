@@ -31,6 +31,13 @@ interface ClickHouseClientInterface
     public function execute(string $sql): void;
 
     /**
+     * Makes sure that ClickHouse is reachable and the configured database exists. A missing database is created.
+     *
+     * @throws DatabaseException with a message which says what is wrong
+     */
+    public function ensureDatabase(): void;
+
+    /**
      * Inserts rows with one INSERT statement.
      *
      * With a deduplication token a repeated insert with the same token is dropped, in the table

@@ -22,6 +22,7 @@ declare(strict_types=1);
 require __DIR__ . '/../vendor/autoload.php';
 
 use App\Modules\Auth\ApiKeyMiddleware;
+use App\Modules\ConnectLog\ConnectLogController;
 use App\Modules\EventLog\EventLogController;
 use App\Modules\PlayLog\PlayLogController;
 use App\Modules\SystemLog\SystemLogController;
@@ -44,5 +45,6 @@ return function (App $app): void
         $group->post('/playlog', [PlayLogController::class, 'ingest']);
         $group->post('/eventlog', [EventLogController::class, 'ingest']);
         $group->post('/systemlog', [SystemLogController::class, 'ingest']);
+        $group->post('/connectlog', [ConnectLogController::class, 'ingest']);
     })->add(ApiKeyMiddleware::class);
 };

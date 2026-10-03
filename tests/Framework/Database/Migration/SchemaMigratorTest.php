@@ -24,6 +24,7 @@ namespace Tests\Framework\Database\Migration;
 
 use App\Framework\Database\ClickHouseClientInterface;
 use App\Framework\Database\Migration\SchemaMigrator;
+use App\Framework\Exceptions\DatabaseException;
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -61,6 +62,7 @@ class SchemaMigratorTest extends TestCase
             /** @var list<string> */
             public array $statements = [];
             public function execute(string $sql): void { $this->statements[] = $sql; }
+            public function ensureDatabase(): void {}
             public function insert(string $table, array $rows, array $columns, ?string $deduplicationToken = null): void {}
         };
 
@@ -71,6 +73,20 @@ class SchemaMigratorTest extends TestCase
         Assert::assertStringContainsString('TABLE IF NOT EXISTS a', $client->statements[0]);
         Assert::assertStringContainsString('TABLE IF NOT EXISTS c', $client->statements[1]);
         Assert::assertStringContainsString('TABLE IF NOT EXISTS b', $client->statements[2]);
+    }
+
+    #[Group('units')]
+    public function testEnsuresTheDatabaseBeforeAnyStatement(): void
+    {
+        file_put_contents($this->dir . '/001_init.sql', 'CREATE TABLE IF NOT EXISTS a (x UInt8) ENGINE = Memory;');
+
+        $client = $this->createMock(ClickHouseClientInterface::class);
+        $client->expects($this->once())->method('ensureDatabase')->willThrowException(new DatabaseException('Database x does not exist.'));
+        $client->expects($this->never())->method('execute');
+
+        $this->expectException(DatabaseException::class);
+
+        new SchemaMigrator($client, $this->dir)->migrate();
     }
 
     #[Group('units')]

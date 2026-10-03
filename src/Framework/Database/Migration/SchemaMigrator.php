@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace App\Framework\Database\Migration;
 
 use App\Framework\Database\ClickHouseClientInterface;
+use App\Framework\Exceptions\DatabaseException;
 use RuntimeException;
 
 /**
@@ -40,9 +41,17 @@ readonly class SchemaMigrator
         private string                    $directory
     ) {}
 
-    /** @return list<string> ausgeführte Dateien */
+    /**
+     * Makes sure first that ClickHouse is reachable and the database exists (it is created if not),
+     * so a wrong setup is reported before any file is read.
+     *
+     * @return list<string> ausgeführte Dateien
+     * @throws DatabaseException
+     */
     public function migrate(): array
     {
+        $this->client->ensureDatabase();
+
         $files = glob($this->directory . '/*.sql');
         if ($files === false)
             throw new RuntimeException('Cannot read migrations directory: ' . $this->directory);

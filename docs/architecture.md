@@ -29,7 +29,7 @@ CMS -> GET /v1/<module>/... (API) -> displays results, resolves IDs to names and
 - There is exactly one way into the database: the ingest API. The collector never writes to ClickHouse directly. To the API it is a client like any CMS.
 - Clients send individual events (one entry per playback or occurrence), never pre-aggregated values. Aggregation happens exclusively in ClickHouse.
 - Aggregation is done with materialized views, there is no separate aggregation job. Hourly aggregates are stored, daily, monthly and yearly values are computed from them.
-- Retention is handled with TTL per event type: individual events are kept for a limited time (play logs 2 years, player events and system reports 6 months, connects 3 months), aggregates permanently or considerably longer.
+- Retention is handled with TTL per event type: individual events are kept for a limited time (play logs 2 years, player events and system reports 6 months, connects 4 years), aggregates permanently or considerably longer.
 - There is no tenant separation. An instance belongs to one CMS installation, data is assigned to players by their player ID. CMS installations that must not see each other's data run separate instances.
 - ClickHouse ports are never exposed to the outside.
 
@@ -46,12 +46,12 @@ CMS -> GET /v1/<module>/... (API) -> displays results, resolves IDs to names and
 - Read endpoints: fixed parameters, no free-form SQL, e.g. aggregated data of one player for a time range, paginated. Responses contain only IDs and numbers, no names.
 - `GET /v1/health`: no authentication, also checks the ClickHouse connection.
 - Errors are returned as JSON with a matching HTTP status and a meaningful message.
-- The schema is defined by idempotent SQL files in `migrations/` (`CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`). A runner (`bin/console db:migrate`) executes all files in order on startup. New tables and columns therefore reach existing installations automatically.
+- The schema is defined by idempotent SQL files in `migrations/` (`CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`). A runner (`bin/console db:migrate`) first checks the connection and creates the database if it is missing, then executes all files in order on startup. New tables and columns therefore reach existing installations automatically.
 - The ClickHouse connection is configured only via environment (`CLICKHOUSE_HOST`, `CLICKHOUSE_PORT`, `CLICKHOUSE_USER`, `CLICKHOUSE_PASSWORD`, `CLICKHOUSE_DATABASE`). ClickHouse can run on the same host or a separate one.
 
 ## Modules
 
-- Code is organized in modules under `src/Modules/<Module>/`: one module per event type (e.g. `PlayLog`, `EventLog`, `PlayerConnect`, `SystemLog`) plus `Auth` and `Health`.
+- Code is organized in modules under `src/Modules/<Module>/`: one module per event type (e.g. `PlayLog`, `EventLog`, `ConnectLog`, `SystemLog`) plus `Auth` and `Health`.
 - Each module has a controller for its routes, the validation of its events and a repository with the inserts and queries for its tables.
 - Concerns shared by all modules (authentication, gzip, batch ID as deduplication token, limit of events per request) are implemented once as middleware or in `src/Framework/`, not repeated in every module.
 - The ingest of all modules shares its parts, a module only adds what is specific to its event type:
@@ -100,6 +100,20 @@ One entry is one system report.
 | `hdmi_output` | Optional string, up to 64 characters |
 
 Optional values a player does not report are stored as `NULL` (`hdmi_output`: empty). The values are not compared with each other, a player with a measuring error keeps its report.
+
+**`POST /v1/connectlog`** (table `connect_log`, kept 4 years, `max_age_days` 1461, hourly aggregate `connect_hourly`)
+
+One entry is one connect (index request) of a player. There is no collector for this type: the CMS sends the connects to the API.
+
+The retention of 4 years is meant for the migration of the data of SmilControl. When it is done, it is set back to 3 months with a new migration file (`ALTER TABLE connect_log MODIFY TTL connected_at + INTERVAL 3 MONTH`, repeatable) and `max_age_days = 90`. The next merge then drops everything older.
+
+| Field | Description |
+|---|---|
+| `player_id` | String, up to 128 characters |
+| `connected_at` | Time of the connect |
+| `refresh` | Integer, 1 to 86400: the refresh interval of the player in seconds, the time the connect covers (`covered_s` of the aggregate is their sum) |
+
+The sender decides how to send them. One request with one entry works, but a sender with many players should collect the connects and send them together (a few seconds up to a minute) to spare ClickHouse many tiny inserts. The idempotency works the same way for one or many entries, but two connects of the same player in the same second with the same `refresh` count as one. ClickHouse `async_insert` is not used: it cannot be combined with the deduplication in the hourly table.
 
 Example for `POST /v1/eventlog`:
 

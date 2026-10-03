@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS play_hourly
 )
     ENGINE = SummingMergeTree((plays, duration_s))
         PARTITION BY toYYYYMM(hour)
-        ORDER BY (content_id, hour, player_id)
+        ORDER BY (player_id, hour, content_id)
         SETTINGS
             non_replicated_deduplication_window = 1000000;
 
@@ -67,23 +67,28 @@ CREATE TABLE IF NOT EXISTS event_log
             ttl_only_drop_parts = 1;
 
 -- Player connects, one row per index request
--- Raw data, kept for three months
-CREATE TABLE IF NOT EXISTS player_connect
+-- refresh is the interval of the player in seconds, the time the connect covers
+-- Raw data, kept for four years while the data of SmilControl is migrated, afterwards
+-- three months (new migration file with ALTER TABLE connect_log MODIFY TTL, and max_age_days in config_connectlog.ini)
+CREATE TABLE IF NOT EXISTS connect_log
 (
     player_id    LowCardinality(String),
     connected_at DateTime('UTC'),
-    refresh      UInt32
+    refresh      UInt32,
+    received_at  DateTime('UTC') DEFAULT now()
 )
     ENGINE = MergeTree
         PARTITION BY toYYYYMM(connected_at)
         ORDER BY (player_id, connected_at)
-        TTL connected_at + INTERVAL 3 MONTH
-        SETTINGS ttl_only_drop_parts = 1;
+        TTL connected_at + INTERVAL 4 YEAR
+        SETTINGS
+            non_replicated_deduplication_window = 1000000,
+            ttl_only_drop_parts = 1;
 
 -- Hourly aggregate, no TTL
 -- covered_s is the sum of refresh, the seconds covered by the connects of that hour
 -- Always query with sum() and GROUP BY
-CREATE TABLE IF NOT EXISTS player_connect_hourly
+CREATE TABLE IF NOT EXISTS connect_hourly
 (
     hour      DateTime('UTC'),
     player_id LowCardinality(String),
@@ -92,19 +97,21 @@ CREATE TABLE IF NOT EXISTS player_connect_hourly
 )
     ENGINE = SummingMergeTree((connects, covered_s))
         PARTITION BY toYYYYMM(hour)
-        ORDER BY (player_id, hour);
+        ORDER BY (player_id, hour)
+        SETTINGS
+            non_replicated_deduplication_window = 1000000;
 
--- Fills player_connect_hourly on every insert into player_connect
-CREATE MATERIALIZED VIEW IF NOT EXISTS player_connect_hourly_mv TO player_connect_hourly AS
+-- Fills connect_hourly on every insert into connect_log
+CREATE MATERIALIZED VIEW IF NOT EXISTS connect_hourly_mv TO connect_hourly AS
 SELECT
     toStartOfHour(connected_at) AS hour,
     player_id,
     count()      AS connects,
     sum(refresh) AS covered_s
-FROM player_connect
+FROM connect_log
 GROUP BY hour, player_id;
 
--- System reports, one rr report
+-- System reports, one row per report
 -- based on https://garlic-signage.com/garlic-player/docs/essentials/logs-reports/#systemreport_format
 -- Kept for six months, no aggregate. Not every player reports cpu, memory and hdmi, they stay NULL (hdmi_output empty).
 CREATE TABLE IF NOT EXISTS system_log

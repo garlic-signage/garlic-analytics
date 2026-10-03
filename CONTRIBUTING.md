@@ -33,7 +33,7 @@ The repository contains a [DDEV](https://ddev.com) configuration with a ClickHou
 
 ```bash
 ddev start
-ddev clickhouse-client     # ClickHouse client inside the container
+ddev exec -s clickhouse clickhouse-client --user analytics --password analytics     # ClickHouse client inside the container
 ```
 
 ## Checks
@@ -75,6 +75,7 @@ Follow the style of the existing files:
 ## Database schema
 
 - The schema is defined by SQL files in `migrations/`, executed in file name order by `bin/console db:migrate`.
+- Before the first file the runner checks the connection and creates the database from `CLICKHOUSE_DATABASE` if it is missing (the user needs the right to create databases for that).
 - The runner executes every file on every run. All statements must be idempotent: `CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS` and so on.
 - Do not change a statement that has already been released. Add a new file instead, otherwise existing installations never receive the change.
 - Statements are split at every `;` and only full-line `--` comments are removed. Do not use `;` inside string literals and do not put comments behind code on the same line.
