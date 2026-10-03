@@ -27,6 +27,8 @@ use App\Framework\Validation\FieldValidator;
 use App\Modules\PlayLog\PlayLogRepository;
 use App\Modules\PlayLog\PlayLogService;
 use App\Modules\PlayLog\PlayLogValidator;
+use DateMalformedStringException;
+use JsonException;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
@@ -51,6 +53,10 @@ class PlayLogServiceTest extends TestCase
         ];
     }
 
+    /**
+     * @throws DateMalformedStringException
+     * @throws JsonException
+     */
     #[Group('units')]
     public function testIngestStoresValidEventsAndReturnsTheirCount(): void
     {
@@ -60,6 +66,10 @@ class PlayLogServiceTest extends TestCase
         static::assertSame(2, $this->service($client)->ingest(['events' => [$this->event(), $this->event()]]));
     }
 
+    /**
+     * @throws DateMalformedStringException
+     * @throws JsonException
+     */
     #[Group('units')]
     public function testIngestDoesNotStoreAnythingIfOneEventIsInvalid(): void
     {

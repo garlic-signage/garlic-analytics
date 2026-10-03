@@ -21,6 +21,11 @@ declare(strict_types=1);
 
 namespace Tests\Collector;
 
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
+
 /**
  * Temporary directories and XML files for the collector tests.
  */
@@ -42,11 +47,11 @@ trait CollectorTestHelper
     {
         foreach ($this->tempDirs as $dir)
         {
-            $items = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS),
-                \RecursiveIteratorIterator::CHILD_FIRST
+            $items = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::CHILD_FIRST
             );
-            /** @var \SplFileInfo $item */
+            /** @var SplFileInfo $item */
             foreach ($items as $item)
                 $item->isDir() && !$item->isLink() ? rmdir($item->getPathname()) : unlink($item->getPathname());
             rmdir($dir);

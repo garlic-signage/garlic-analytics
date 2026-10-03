@@ -113,7 +113,7 @@ class FileArchiveTest extends TestCase
         file_put_contents($this->dir . '/processed', 'a file');
 
         $this->expectException(ArchiveException::class);
-        $this->expectExceptionMessage('Can not create directory');
+        $this->expectExceptionMessageIsOrContains('Can not create directory');
 
         new FileArchive()->markProcessed($this->dir . '/upload/playlog-a.xml', $this->dir . '/processed');
     }

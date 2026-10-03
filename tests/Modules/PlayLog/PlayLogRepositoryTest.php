@@ -24,17 +24,26 @@ namespace Tests\Modules\PlayLog;
 use App\Framework\Database\ClickHouseClientInterface;
 use App\Modules\PlayLog\PlayLogEvent;
 use App\Modules\PlayLog\PlayLogRepository;
+use DateMalformedStringException;
 use DateTimeImmutable;
+use JsonException;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 class PlayLogRepositoryTest extends TestCase
 {
+    /**
+     * @throws DateMalformedStringException
+     */
     private function event(string $player, string $end = '2026-10-03T10:00:10Z'): PlayLogEvent
     {
         return new PlayLogEvent($player, 'c1', new DateTimeImmutable('2026-10-03T10:00:00Z'), new DateTimeImmutable($end));
     }
 
+    /**
+     * @throws DateMalformedStringException
+     * @throws JsonException
+     */
     #[Group('units')]
     public function testInsertBatchWritesAllEventsWithOneInsert(): void
     {
@@ -54,6 +63,10 @@ class PlayLogRepositoryTest extends TestCase
         new PlayLogRepository($client)->insertBatch([$this->event('p1'), $this->event('p2')]);
     }
 
+    /**
+     * @throws JsonException
+     * @throws DateMalformedStringException
+     */
     #[Group('units')]
     public function testSameBatchGetsTheSameTokenAndAnotherBatchDoesNot(): void
     {

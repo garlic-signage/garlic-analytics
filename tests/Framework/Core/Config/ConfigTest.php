@@ -45,6 +45,9 @@ class ConfigTest extends TestCase
         $this->config           = new Config($this->configLoaderStub, ['key_path' => 'value_path'], ['key_env' => 'value_env']);
     }
 
+    /**
+     * @throws CoreException
+     */
     #[Group('units')]
     public function testGetConfigValueReturnsValue(): void
     {
@@ -76,6 +79,9 @@ class ConfigTest extends TestCase
 
 	}
 
+    /**
+     * @throws CoreException
+     */
     #[Group('units')]
     public function testGetConfigValueReturnsNullForNonExistentKey(): void
     {
@@ -135,6 +141,9 @@ class ConfigTest extends TestCase
 		static::assertEquals(Level::Info, $config->getLogLevel());
 	}
 
+    /**
+     * @throws CoreException
+     */
     #[Group('units')]
     public function testGetFullConfigDataByModule(): void
     {
@@ -150,7 +159,10 @@ class ConfigTest extends TestCase
         static::assertEquals($configData, $result);
     }
 
-     #[Group('units')]
+    /**
+     * @throws CoreException
+     */
+    #[Group('units')]
     public function testPreloadModulesCachesConfigurations(): void
     {
         $modules = ['module1', 'module2'];
@@ -173,6 +185,9 @@ class ConfigTest extends TestCase
         static::assertEquals($configData['module2'], $this->config->getFullConfigDataByModule('module2'));
     }
 
+    /**
+     * @throws CoreException
+     */
     #[Group('units')]
     public function testGetConfigForModuleCachesResults(): void
     {

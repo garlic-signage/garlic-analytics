@@ -71,7 +71,7 @@ class ClickHouseClientTest extends TestCase
         $driver->method('write')->willThrowException(new QueryException('boom'));
 
         $this->expectException(DatabaseException::class);
-        $this->expectExceptionMessage('Insert into t failed: boom');
+        $this->expectExceptionMessageIsOrContains('Insert into t failed: boom');
 
         new ClickHouseClient($driver)->insert('t', [['x']], ['a']);
     }

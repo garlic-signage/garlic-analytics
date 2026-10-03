@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace Tests\Modules\Auth;
 
 use App\Framework\Core\Crypt;
+use App\Framework\Exceptions\CoreException;
 use App\Modules\Auth\ApiClient;
 use App\Modules\Auth\ApiKeyMiddleware;
 use App\Modules\Auth\ApiKeyStoreInterface;
@@ -62,6 +63,9 @@ class ApiKeyMiddlewareTest extends TestCase
         };
     }
 
+    /**
+     * @throws CoreException
+     */
     #[Group('units')]
     public function testValidKeyWithScopePassesClientOn(): void
     {
@@ -74,6 +78,9 @@ class ApiKeyMiddlewareTest extends TestCase
         static::assertSame('collector', $client->name);
     }
 
+    /**
+     * @throws CoreException
+     */
     #[Group('units')]
     public function testSchemeIsCaseInsensitive(): void
     {
@@ -82,14 +89,20 @@ class ApiKeyMiddlewareTest extends TestCase
         static::assertSame(204, $response->getStatusCode());
     }
 
+    /**
+     * @throws CoreException
+     */
     #[Group('units')]
     public function testMissingHeaderIsUnauthorized(): void
     {
         $this->expectException(HttpUnauthorizedException::class);
-        $this->expectExceptionMessage('Missing API key.');
+        $this->expectExceptionMessageIsOrContains('Missing API key.');
         $this->middleware->process($this->request('POST', null), $this->handler);
     }
 
+    /**
+     * @throws CoreException
+     */
     #[Group('units')]
     public function testOtherSchemeIsUnauthorized(): void
     {
@@ -97,6 +110,9 @@ class ApiKeyMiddlewareTest extends TestCase
         $this->middleware->process($this->request('POST', 'Basic dXNlcjpwYXNz'), $this->handler);
     }
 
+    /**
+     * @throws CoreException
+     */
     #[Group('units')]
     public function testUnknownKeyIsUnauthorized(): void
     {
@@ -105,6 +121,9 @@ class ApiKeyMiddlewareTest extends TestCase
         $this->middleware->process($this->request('POST', 'Bearer wrong-key'), $this->handler);
     }
 
+    /**
+     * @throws CoreException
+     */
     #[Group('units')]
     public function testMissingScopeIsForbiddenAndStopsTheRequest(): void
     {

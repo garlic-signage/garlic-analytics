@@ -28,6 +28,7 @@ use App\Modules\PlayLog\PlayLogController;
 use App\Modules\PlayLog\PlayLogRepository;
 use App\Modules\PlayLog\PlayLogService;
 use App\Modules\PlayLog\PlayLogValidator;
+use JsonException;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Slim\Psr7\Factory\ResponseFactory;
@@ -43,6 +44,9 @@ class PlayLogControllerTest extends TestCase
         ));
     }
 
+    /**
+     * @throws JsonException
+     */
     #[Group('units')]
     public function testIngestAnswersWith201AndCount(): void
     {
@@ -63,6 +67,9 @@ class PlayLogControllerTest extends TestCase
         static::assertSame('{"accepted":1}', (string) $response->getBody());
     }
 
+    /**
+     * @throws JsonException
+     */
     #[Group('units')]
     public function testMissingBodyIsAValidationError(): void
     {

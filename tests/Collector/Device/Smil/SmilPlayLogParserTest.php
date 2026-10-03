@@ -100,7 +100,7 @@ class SmilPlayLogParserTest extends TestCase
         $path = $this->file(substr(self::playLogXml('p', [['1', 'a', 'b'], ['2', 'c', 'd']]), 0, -60));
 
         $this->expectException(ParseException::class);
-        $this->expectExceptionMessage('Invalid XML');
+        $this->expectExceptionMessageIsOrContains('Invalid XML');
 
         new SmilPlayLogParser()->parse($path);
     }
@@ -111,7 +111,7 @@ class SmilPlayLogParserTest extends TestCase
         $path = $this->file('<report xmlns="http://schemas.adfotain.org/adapi-1.0"><player id="p"><playerEventLog></playerEventLog></player></report>');
 
         $this->expectException(ParseException::class);
-        $this->expectExceptionMessage('not a play log');
+        $this->expectExceptionMessageIsOrContains('not a play log');
 
         new SmilPlayLogParser()->parse($path);
     }
@@ -120,9 +120,9 @@ class SmilPlayLogParserTest extends TestCase
     public function testWrongRootElementIsRejected(): void
     {
         $this->expectException(ParseException::class);
-        $this->expectExceptionMessage('Root element must be "report"');
+        $this->expectExceptionMessageIsOrContains('Root element must be "report"');
 
-        new SmilPlayLogParser()->parse($this->file('<html><body/></html>'));
+        new SmilPlayLogParser()->parse($this->file('<html lang="en"><body/></html>'));
     }
 
     #[Group('units')]
@@ -131,7 +131,7 @@ class SmilPlayLogParserTest extends TestCase
         $xml = str_replace('<player id="p">', '<player>', self::playLogXml('p', [['1', 'a', 'b']]));
 
         $this->expectException(ParseException::class);
-        $this->expectExceptionMessage('"id" of element "player"');
+        $this->expectExceptionMessageIsOrContains('"id" of element "player"');
 
         new SmilPlayLogParser()->parse($this->file($xml));
     }
@@ -142,7 +142,7 @@ class SmilPlayLogParserTest extends TestCase
         $xml = str_replace('<endTime>d</endTime>', '', self::playLogXml('p', [['1', 'a', 'b'], ['2', 'c', 'd']]));
 
         $this->expectException(ParseException::class);
-        $this->expectExceptionMessage('contentPlayed #2 has no endTime');
+        $this->expectExceptionMessageIsOrContains('contentPlayed #2 has no endTime');
 
         new SmilPlayLogParser()->parse($this->file($xml));
     }

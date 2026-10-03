@@ -53,6 +53,9 @@ class JsonFileApiKeyStoreTest extends TestCase
             rmdir($this->dir);
     }
 
+    /**
+     * @throws CoreException
+     */
     #[Group('units')]
     public function testMissingFileMeansNoKeys(): void
     {
@@ -61,6 +64,9 @@ class JsonFileApiKeyStoreTest extends TestCase
         static::assertNull($store->findByKeyHash(hash('sha256', 'anything')));
     }
 
+    /**
+     * @throws CoreException
+     */
     #[Group('units')]
     public function testAddedKeyIsFoundByHash(): void
     {
@@ -75,6 +81,9 @@ class JsonFileApiKeyStoreTest extends TestCase
         static::assertNull($store->findByKeyHash(hash('sha256', 'other')));
     }
 
+    /**
+     * @throws CoreException
+     */
     #[Group('units')]
     public function testFileIsCreatedPrivateAndHoldsNoPlainKey(): void
     {
@@ -86,6 +95,9 @@ class JsonFileApiKeyStoreTest extends TestCase
         static::assertFileDoesNotExist($this->file . '.tmp');
     }
 
+    /**
+     * @throws CoreException
+     */
     #[Group('units')]
     public function testDuplicateNameThrows(): void
     {
@@ -96,6 +108,9 @@ class JsonFileApiKeyStoreTest extends TestCase
         $store->add('garlic-hub', hash('sha256', 'two'), [Scope::Read]);
     }
 
+    /**
+     * @throws CoreException
+     */
     #[Group('units')]
     public function testRemoveDeletesOnlyTheNamedKey(): void
     {
@@ -109,6 +124,9 @@ class JsonFileApiKeyStoreTest extends TestCase
         static::assertNotNull($store->findByKeyHash(hash('sha256', 'two')));
     }
 
+    /**
+     * @throws CoreException
+     */
     #[Group('units')]
     public function testUnknownScopesInFileAreIgnored(): void
     {

@@ -31,7 +31,6 @@ use App\Collector\Exceptions\RejectedIngestException;
 use App\Collector\Exceptions\RetryableIngestException;
 use App\Collector\FileArchive;
 use App\Collector\FileResult;
-use App\Collector\FileStatus;
 use App\Collector\LogType;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Group;
@@ -56,7 +55,7 @@ class CollectorRunnerTest extends TestCase
             ['1', '2026-10-03T10:00:00+02:00', '2026-10-03T10:00:10+02:00'],
             ['2', '2026-10-03T10:00:10+02:00', '2026-10-03T10:00:20+02:00'],
             ['3', '2026-10-03T10:00:20+02:00', '2026-10-03T10:00:30+02:00'],
-        ]), 3000);
+        ]));
         $this->put('playlog-broken.xml', '<report><player id="p">', 3001);
         $this->put('event-a.xml', '<report/>', 3002);
         $this->put('system-a.xml', '<report/>', 3003);
@@ -283,7 +282,7 @@ class CollectorRunnerTest extends TestCase
     public function testUnknownDeviceIsRejected(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unknown device "other", known: smil');
+        $this->expectExceptionMessageIsOrContains('Unknown device "other", known: smil');
 
         $this->runner()->run('other');
     }
