@@ -122,17 +122,17 @@ class ConfigTest extends TestCase
 	}
 
 	#[Group('units')]
-	public function testLogLevelIsWarningInUnknownEnvironment(): void
+	public function testLogLevelIsInfoInUnknownEnvironment(): void
 	{
 		$config = new Config($this->configLoaderStub, [], ['APP_ENV' => 'unknown']);
 		static::assertEquals(Level::Info, $config->getLogLevel());
 	}
 
 	#[Group('units')]
-	public function logLevelIsWarningWhenEnvIsNotSet(): void
+	public function testLogLevelIsInfoWhenEnvIsNotSet(): void
 	{
 		$config = new Config($this->configLoaderStub, [], []);
-		static::assertEquals(Level::Warning, $config->getLogLevel());
+		static::assertEquals(Level::Info, $config->getLogLevel());
 	}
 
     #[Group('units')]
