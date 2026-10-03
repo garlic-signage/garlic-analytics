@@ -25,8 +25,6 @@ namespace App\Framework\Database;
 use App\Framework\Exceptions\DatabaseException;
 use ClickHouseDB\Client;
 use ClickHouseDB\Exception\ClickHouseException;
-use ClickHouseDB\Query\Expression\Raw;
-use ClickHouseDB\Quote\FormatLine;
 use Throwable;
 
 readonly class ClickHouseClient implements ClickHouseClientInterface
@@ -99,11 +97,11 @@ readonly class ClickHouseClient implements ClickHouseClientInterface
         if ($rows === [])
             return;
 
-        $values = [];
+        $lines = [];
         foreach ($rows as $row)
-            $values[] = '(' . FormatLine::Insert(array_map($this->mapToLiteral(...), $row)) . ')';
+            $lines[] = json_encode($this->toObject($columns, $row), JSON_THROW_ON_ERROR);
 
-        $sql = 'INSERT INTO `' . $table . '` (`' . implode('`,`', $columns) . '`) VALUES ' . implode(',', $values);
+        $sql = 'INSERT INTO `' . $table . "` FORMAT JSONEachRow\n" . implode("\n", $lines);
 
         // the second setting makes the token count for materialized views too (needs a window on their target table)
         $settings = $deduplicationToken === null ? [] : [
@@ -122,23 +120,19 @@ readonly class ClickHouseClient implements ClickHouseClientInterface
     }
 
     /**
-     * The driver quotes a PHP array as a list "[...]", a Map needs the literal {'key':'value'}.
+     * One row as an object with the column names as keys. An array value is a Map, which JSON needs as an
+     * object also when it is empty or has keys like 0, 1, 2.
+     *
+     * @param list<string>                                $columns
+     * @param list<int|string|array<string,string>|null> $row
+     * @return array<string,int|string|object|null>
      */
-    private function mapToLiteral(mixed $value): mixed
+    private function toObject(array $columns, array $row): array
     {
-        if (!is_array($value))
-            return $value;
+        $object = [];
+        foreach (array_combine($columns, $row) as $column => $value)
+            $object[$column] = is_array($value) ? (object) $value : $value;
 
-        /** @var array<array-key,string> $value */
-        $pairs = [];
-        foreach ($value as $key => $item)
-            $pairs[] = $this->quote((string) $key) . ':' . $this->quote($item);
-
-        return new Raw('{' . implode(',', $pairs) . '}');
-    }
-
-    private function quote(string $value): string
-    {
-        return "'" . addcslashes($value, "\\'") . "'";
+        return $object;
     }
 }

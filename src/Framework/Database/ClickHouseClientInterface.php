@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace App\Framework\Database;
 
 use App\Framework\Exceptions\DatabaseException;
+use JsonException;
 
 /**
  * Interface representing a client for interacting with a ClickHouse database.
@@ -49,6 +50,7 @@ interface ClickHouseClientInterface
      * @param list<list<int|string|array<string,string>|null>> $rows    values in the order of $columns
      * @param list<string>                                     $columns
      * @throws DatabaseException
+     * @throws JsonException a value can not be encoded as JSON (invalid UTF-8)
      */
     public function insert(string $table, array $rows, array $columns, ?string $deduplicationToken = null): void;
 }

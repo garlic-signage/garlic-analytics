@@ -131,39 +131,51 @@ class ClickHouseClientTest extends TestCase
     }
 
     #[Group('units')]
-    public function testInsertBuildsOneStatementWithDeduplicationSettings(): void
+    public function testInsertSendsOneJsonEachRowStatementWithDeduplicationSettings(): void
     {
         $driver = $this->createMock(Client::class);
         $driver->expects($this->once())
             ->method('write')
             ->with(
-                "INSERT INTO `t` (`a`,`b`) VALUES ('x\\'y',1),('z',2)",
+                "INSERT INTO `t` FORMAT JSONEachRow\n{\"a\":\"x'y\\\\\",\"b\":1}\n{\"a\":\"z\",\"b\":2}",
                 [],
                 true,
                 ['insert_deduplication_token' => 'token-1', 'deduplicate_blocks_in_dependent_materialized_views' => 1]
             );
 
-        new ClickHouseClient($driver)->insert('t', [["x'y", 1], ['z', 2]], ['a', 'b'], 'token-1');
+        new ClickHouseClient($driver)->insert('t', [["x'y\\", 1], ['z', 2]], ['a', 'b'], 'token-1');
     }
 
     #[Group('units')]
-    public function testInsertWritesMapsAsLiterals(): void
+    public function testInsertWritesMapsAsJsonObjects(): void
     {
         $driver = $this->createMock(Client::class);
         $driver->expects($this->once())
             ->method('write')
-            ->with("INSERT INTO `t` (`a`,`m`) VALUES ('x',{'k':'it\\'s','z':'v'}),('y',{})", [], true, []);
+            ->with("INSERT INTO `t` FORMAT JSONEachRow\n{\"a\":\"x\",\"m\":{\"k\":\"it's\",\"0\":\"v\"}}\n{\"a\":\"y\",\"m\":{}}", [], true, []);
 
-        new ClickHouseClient($driver)->insert('t', [['x', ['k' => "it's", 'z' => 'v']], ['y', []]], ['a', 'm']);
+        // a map is an object also if it is empty or its keys look like a list (PHP turns the key "0" into an integer)
+        /** @var array<string,string> $map */
+        $map = ['k' => "it's", '0' => 'v'];
+        new ClickHouseClient($driver)->insert('t', [['x', $map], ['y', []]], ['a', 'm']);
     }
 
     #[Group('units')]
     public function testInsertWritesNullForNullableColumns(): void
     {
         $driver = $this->createMock(Client::class);
-        $driver->expects($this->once())->method('write')->with("INSERT INTO `t` (`a`,`b`) VALUES ('x',NULL),('y',5)", [], true, []);
+        $driver->expects($this->once())->method('write')->with("INSERT INTO `t` FORMAT JSONEachRow\n{\"a\":\"x\",\"b\":null}\n{\"a\":\"y\",\"b\":5}", [], true, []);
 
         new ClickHouseClient($driver)->insert('t', [['x', null], ['y', 5]], ['a', 'b']);
+    }
+
+    #[Group('units')]
+    public function testInsertKeepsUnicodeAndLineBreaksIntact(): void
+    {
+        $driver = $this->createMock(Client::class);
+        $driver->expects($this->once())->method('write')->with("INSERT INTO `t` FORMAT JSONEachRow\n{\"a\":\"line\\nbreak \\u00e4\"}", [], true, []);
+
+        new ClickHouseClient($driver)->insert('t', [["line\nbreak ä"]], ['a']);
     }
 
     #[Group('units')]
