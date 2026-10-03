@@ -21,6 +21,9 @@ declare(strict_types=1);
 
 namespace App\Framework\Database;
 
+/**
+ * Interface representing a client for interacting with a ClickHouse database.
+ */
 interface ClickHouseClientInterface
 {
     public function execute(string $sql): void;

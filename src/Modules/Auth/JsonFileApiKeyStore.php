@@ -31,7 +31,7 @@ use JsonException;
  *   {"garlic-hub": {"hash": "<sha256>", "scopes": ["ingest", "read"]}}
  *
  * The file lives in var/keys/, outside the docroot and the repository.
- * It is written atomically (temporary file + rename) with mode 0600.
+ * It is written atomically (temporary file and rename) with mode 0600.
  */
 readonly class JsonFileApiKeyStore implements ApiKeyStoreInterface
 {

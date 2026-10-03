@@ -25,6 +25,14 @@ namespace App\Framework\Database\Migration;
 use App\Framework\Database\ClickHouseClientInterface;
 use RuntimeException;
 
+/**
+ * The SchemaMigrator class is a lightweight database schema migration runner designed to
+ * execute SQL migration scripts against a ClickHouse database using an injected
+ * ClickHouseClientInterface instance.
+ *
+ * Sequential Execution: Sorts the list of file paths alphabetically via sort($files, SORT_STRING)
+ * to ensure migration scripts execute in a predictable order (e.g., 001_init.sql, 002_create_tables.sql).
+ */
 readonly class SchemaMigrator
 {
     public function __construct(
