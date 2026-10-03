@@ -21,6 +21,7 @@ All commands return exit code `0` on success and `1` on failure, so they can be 
 | [`apikey:create`](#apikeycreate) | Create an API key for a client |
 | [`apikey:list`](#apikeylist) | List clients and their scopes |
 | [`apikey:revoke`](#apikeyrevoke) | Delete the API key of a client |
+| [`collector:run`](#collectorrun) | Send uploaded device files to the ingest API |
 
 ## db:migrate
 
@@ -111,3 +112,36 @@ To rotate a key without downtime, create a new key under a different name, switc
 It is written atomically with mode `0600`, its directory has mode `0700`. In a container setup, `var/` should be a volume so the keys survive a restart. Back it up like any other secret: it contains no usable keys, but losing it invalidates all of them.
 
 See [Authentication in docs/architecture.md](architecture.md#authentication) for how the keys are checked on a request.
+
+## collector:run
+
+```bash
+bin/console collector:run [--device=<name>] [--type=<type>] [--file=<name>] [--dry-run]
+```
+
+Reads the files devices uploaded, sends them to the ingest API and moves them. Run it from cron, the collector is not an API itself.
+
+Every device family has its own upload directory, `var/collector/<device>/upload/`. The directory decides which adapter reads a file, the adapter decides the type by the file name. For `smil` these are `playlog-*.xml`, `event-*.xml` and `system-*.xml`. Only play logs are sent so far. Files of other types and files with an unknown name stay in `upload/`.
+
+| Option | |
+|---|---|
+| `--device` | Only this device, e.g. `smil`. |
+| `--type` | Only this type: `playlog`, `event` or `system`. |
+| `--file` | Only the file with this name. Also read if it is very new. |
+| `--dry-run` | Read and count, send and move nothing. Needs no API key. |
+
+**Settings.** The API is configured in `.env`: `COLLECTOR_API_URL` (default `http://localhost`) and `COLLECTOR_API_KEY`. Create the key with `bin/console apikey:create collector --scope=ingest`. Without a key the command stops before it touches any file. `batch_size`, `min_age_seconds` and the timeouts are in `config/settings/config_collector.ini`. Files changed during the last `min_age_seconds` are skipped because they may still be uploading.
+
+**What happens to a file.** The events are cut into blocks of `batch_size`, one request per block. The cut is always the same for the same file, so blocks the API already has are dropped as duplicates when a file is sent again.
+
+| Result | What happens |
+|---|---|
+| All blocks accepted (`2xx`) | File moves to `processed/`. A file without events moves too, without a request. |
+| File is not valid XML, or the API answers `400`, `413` or `422` | File moves to `error/`, with `<file>.error` (time and reason) next to it. |
+| API not reachable, `5xx`, `408`, `429`, or `401`, `403`, `404`, `405` (wrong key, rights or URL) | File stays in `upload/` and the run stops, the next run starts again with it. |
+
+`processed/` and `error/` are next to `upload/`. If a name is already taken there, a time stamp is put before the extension. To process a file again, move it back to `upload/`.
+
+Only one run works at a time (`var/collector/collector.lock`). If another run is active, the command ends with exit code `0`.
+
+**Exit code.** `1` if the run had to stop or the settings are incomplete, otherwise `0`. Files in `error/` are a data problem and do not change the exit code, so look into `error/` from time to time.

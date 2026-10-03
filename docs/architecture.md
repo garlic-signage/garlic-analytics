@@ -77,8 +77,8 @@ CMS -> GET /v1/<module>/... (API) -> displays results, resolves IDs to names and
   - Directories on the same volume: `inbox/`, `processed/`, `error/`. Files are moved with `rename()` (atomic).
   - Files are processed sequentially, one request per file. Very large files are split into blocks.
   - After `2xx`: file is moved to `processed/`.
-  - After `4xx` or an adapter error: file is moved to `error/`, together with `<file>.error` containing the message and timestamp.
-  - After `5xx` or a network error: file stays in `inbox/` and is retried on the next run.
+  - After `400`, `413` or `422`, or an adapter error: file is moved to `error/`, together with `<file>.error` containing the message and timestamp. Other `4xx` (`401`, `403`, `404`, `405`) point to a wrong key, rights or URL of the collector, not to the data, so the file stays and the run stops.
+  - After `5xx`, `408`, `429` or a network error: file stays in `inbox/`, the run stops (the next files would fail the same way) and is retried on the next run.
   - Concurrent runs are prevented by a lock.
   - `processed/` is cleaned up after a fixed period (guideline 30 days). This is the window for reprocessing.
   - Reprocessing: move files from `error/` or `processed/` back to `inbox/`. Idempotency in the API prevents double counting.

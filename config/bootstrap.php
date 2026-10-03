@@ -58,6 +58,7 @@ $paths = [
     'cacheDir' => $systemDir . '/var/cache',
     'logDir' => $systemDir . '/var/logs',
     'keysDir' => $systemDir . '/var/keys',
+    'collectorDir' => $systemDir . '/var/collector',
     'configDir' => $systemDir . '/config',
     'migrationDir' => $systemDir . '/migrations',
     'commandDir' => $systemDir . '/src/Commands'
