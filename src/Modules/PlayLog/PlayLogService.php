@@ -21,6 +21,8 @@ declare(strict_types=1);
 
 namespace App\Modules\PlayLog;
 
+use App\Framework\Exceptions\DatabaseException;
+use App\Framework\Exceptions\ValidationException;
 use DateMalformedStringException;
 use JsonException;
 
@@ -37,6 +39,8 @@ readonly class PlayLogService
     /**
      * @param mixed $body
      * @return int number of events in the request (a repeated batch is dropped silently, the answer stays the same)
+     * @throws ValidationException
+     * @throws DatabaseException
      * @throws JsonException
      * @throws DateMalformedStringException
      */

@@ -24,6 +24,7 @@ namespace Tests\Modules\PlayLog;
 use App\Framework\Exceptions\ValidationException;
 use App\Framework\Validation\FieldValidator;
 use App\Modules\PlayLog\PlayLogValidator;
+use DateMalformedStringException;
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -53,6 +54,7 @@ class PlayLogValidatorTest extends TestCase
     /**
      * @param array<string,mixed> $body
      * @return array<string,string>
+     * @throws DateMalformedStringException
      */
     private function errorsOf(array $body): array
     {
@@ -64,10 +66,12 @@ class PlayLogValidatorTest extends TestCase
         {
             return $e->getErrors();
         }
-
         static::fail('ValidationException expected');
     }
 
+    /**
+     * @throws DateMalformedStringException
+     */
     #[Group('units')]
     public function testValidEventsBecomeDtos(): void
     {
@@ -79,6 +83,9 @@ class PlayLogValidatorTest extends TestCase
         static::assertSame('2026-10-03 10:00:10', $events[0]->endTime->format('Y-m-d H:i:s'));
     }
 
+    /**
+     * @throws DateMalformedStringException
+     */
     #[Group('units')]
     public function testBodyWithoutEventListIsRejected(): void
     {
@@ -87,6 +94,9 @@ class PlayLogValidatorTest extends TestCase
         static::assertSame(['events' => 'must be a list of events'], $this->errorsOf(['events' => 'x']));
     }
 
+    /**
+     * @throws DateMalformedStringException
+     */
     #[Group('units')]
     public function testEmptyAndTooLargeBatchesAreRejected(): void
     {
@@ -97,6 +107,9 @@ class PlayLogValidatorTest extends TestCase
         );
     }
 
+    /**
+     * @throws DateMalformedStringException
+     */
     #[Group('units')]
     public function testFractionsOfSecondsAreRejected(): void
     {
@@ -109,6 +122,9 @@ class PlayLogValidatorTest extends TestCase
         );
     }
 
+    /**
+     * @throws DateMalformedStringException
+     */
     #[Group('units')]
     public function testOffsetIsConvertedToUtc(): void
     {
@@ -122,6 +138,9 @@ class PlayLogValidatorTest extends TestCase
         static::assertSame('2026-10-03 10:30:37', $events[0]->endTime->format('Y-m-d H:i:s'));
     }
 
+    /**
+     * @throws DateMalformedStringException
+     */
     #[Group('units')]
     public function testErrorsAreCollectedPerEventAndField(): void
     {
@@ -140,6 +159,9 @@ class PlayLogValidatorTest extends TestCase
         ], $errors);
     }
 
+    /**
+     * @throws DateMalformedStringException
+     */
     #[Group('units')]
     public function testEndBeforeStartIsRejected(): void
     {
@@ -149,6 +171,9 @@ class PlayLogValidatorTest extends TestCase
         static::assertSame(['events.0.end_time' => 'must not be before start_time'], $this->errorsOf(['events' => [$event]]));
     }
 
+    /**
+     * @throws DateMalformedStringException
+     */
     #[Group('units')]
     public function testTooOldEventIsRejected(): void
     {
@@ -159,6 +184,9 @@ class PlayLogValidatorTest extends TestCase
         static::assertSame(['events.0.start_time' => 'must not be older than 730 days'], $this->errorsOf(['events' => [$event]]));
     }
 
+    /**
+     * @throws DateMalformedStringException
+     */
     #[Group('units')]
     public function testEventInTheFutureIsRejectedBeyondTolerance(): void
     {
@@ -169,6 +197,9 @@ class PlayLogValidatorTest extends TestCase
         static::assertSame(['events.0.end_time' => 'must not be in the future'], $this->errorsOf(['events' => [$event]]));
     }
 
+    /**
+     * @throws DateMalformedStringException
+     */
     #[Group('units')]
     public function testErrorsAreCapped(): void
     {

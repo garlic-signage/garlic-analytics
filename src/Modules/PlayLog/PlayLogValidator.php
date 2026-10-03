@@ -50,6 +50,7 @@ readonly class PlayLogValidator
      * @param mixed $body
      * @param DateTimeImmutable $now
      * @return list<PlayLogEvent>
+     * @throws ValidationException
      * @throws DateMalformedStringException
      */
     public function validate(mixed $body, DateTimeImmutable $now = new DateTimeImmutable()): array
