@@ -29,7 +29,7 @@ CMS -> GET /v1/<module>/... (API) -> displays results, resolves IDs to names and
 - There is exactly one way into the database: the ingest API. The collector never writes to ClickHouse directly. To the API it is a client like any CMS.
 - Clients send individual events (one entry per playback or occurrence), never pre-aggregated values. Aggregation happens exclusively in ClickHouse.
 - Aggregation is done with materialized views, there is no separate aggregation job. Hourly aggregates are stored, daily, monthly and yearly values are computed from them.
-- Retention is handled with TTL per event type: individual events are kept for up to 2 years, aggregates permanently or considerably longer.
+- Retention is handled with TTL per event type: individual events are kept for a limited time (play logs 2 years, player events and system reports 6 months, connects 3 months), aggregates permanently or considerably longer.
 - There is no tenant separation. An instance belongs to one CMS installation, data is assigned to players by their player ID. CMS installations that must not see each other's data run separate instances.
 - ClickHouse ports are never exposed to the outside.
 
@@ -51,11 +51,51 @@ CMS -> GET /v1/<module>/... (API) -> displays results, resolves IDs to names and
 
 ## Modules
 
-- Code is organized in modules under `src/Modules/<Module>/`: one module per event type (e.g. `PlayLog`, `PlayerEvent`, `PlayerConnect`, `SystemReport`) plus `Auth` and `Health`.
+- Code is organized in modules under `src/Modules/<Module>/`: one module per event type (e.g. `PlayLog`, `EventLog`, `PlayerConnect`, `SystemReport`) plus `Auth` and `Health`.
 - Each module has a controller for its routes, the validation of its events and a repository with the inserts and queries for its tables.
 - Concerns shared by all modules (authentication, gzip, batch ID as deduplication token, limit of events per request) are implemented once as middleware or in `src/Framework/`, not repeated in every module.
+- The ingest of all modules shares its parts, a module only adds what is specific to its event type:
+  - `Framework\Ingest\IngestController` and `IngestService`: base classes. A module extends them (`PlayLogController`, `PlayLogService`) and delivers a validator and a repository through the interfaces `IngestValidatorInterface` and `IngestRepositoryInterface`.
+  - `Framework\Validation\BatchValidator`: the checks around the event list (list, limit of events, collected errors as `events.<index>.<field>`, all or nothing) and the common field checks (strings, ISO 8601 time, too old, in the future). The module validator checks the fields of its event type.
+  - `Framework\Database\BatchRepository`: base of the repositories. It writes the rows with one `INSERT` and builds the deduplication token from them.
+  - `ClickHouseClient` writes a PHP array with string keys as a `Map` value (`{'key':'value'}`).
 - Read endpoints aggregate first (`sum()` with `GROUP BY` on the hourly tables) and paginate the aggregated result.
 - Routes stay central in `config/routes.php`, schema files stay central in `migrations/`.
+
+## Ingest formats
+
+The body of every ingest request is `{"events": [...]}`. Times are ISO 8601 to the second with an offset (`2026-10-03T15:30:27+02:00` or `Z`, no fractions of seconds), the API stores them in UTC. The answer is `201 {"accepted": n}`, invalid data gives `422` with the errors of all events. The limits are set per module in `config/settings/config_<module>.ini` (`max_events`, `max_age_days`, `max_future_seconds`).
+
+**`POST /v1/playlog`** (table `play_log`, kept 2 years)
+
+| Field | Description |
+|---|---|
+| `player_id` | String, up to 128 characters |
+| `content_id` | String, up to 128 characters |
+| `start_time`, `end_time` | `end_time` must not be before `start_time` |
+
+**`POST /v1/eventlog`** (table `event_log`, kept 6 months, `max_age_days` 180)
+
+| Field | Description |
+|---|---|
+| `player_id` | String, up to 128 characters |
+| `event_time` | Time of the event |
+| `event_type` | One of `debug`, `informational`, `notice`, `warning`, `error`, `critical`, `fatal`. The client normalizes to these names, the API rejects others. |
+| `event_source`, `event_name` | Strings, up to 128 characters |
+| `metadata` | Optional object with string values: up to 20 entries, key up to 64, value up to 1024 characters. Stored as an empty map if missing. |
+
+Example:
+
+```json
+{"events": [{
+  "player_id": "player-1",
+  "event_time": "2026-10-03T15:30:27+02:00",
+  "event_type": "warning",
+  "event_source": "ContentManager",
+  "event_name": "FETCH_FAILED",
+  "metadata": {"resourceURI": "https://example.com/a.jpg", "errorMessage": "Host not found"}
+}]}
+```
 
 ## Authentication
 
@@ -73,6 +113,9 @@ CMS -> GET /v1/<module>/... (API) -> displays results, resolves IDs to names and
 - Accepts uploads via WebDAV or HTTP PUT and stores them in `inbox/`.
 - Normalization is done by adapters, one per player format. An adapter translates a source-specific format (e.g. the XML report of a specific player) into the event format.
 - Sends normalized events to the API with its own API key (scope `ingest`).
+- The type of a file follows from its name (`LogType`: `playlog`, `event`, `system`) and decides the endpoint (`LogType::endpoint()`). Play logs and events are sent so far, `system` stays in `upload/` until its ingest exists.
+- Every type has a record class (`RecordInterface`: `PlayLogRecord`, `EventLogRecord`) in the format of its endpoint. `IngestClientInterface::send(LogType, records)` and `DeviceAdapterInterface::parse(LogType, file)` work for all types, a new type does not need new methods.
+- The SMIL adapter reads the files with one parser per type on a common base (`SmilReportParser`). A file is read completely before anything is sent: one broken event (a missing field, broken XML) sends the whole file to `error/`.
 - File processing:
   - Directories on the same volume: `inbox/`, `processed/`, `error/`. Files are moved with `rename()` (atomic).
   - Files are processed sequentially, one request per file. Very large files are split into blocks.
