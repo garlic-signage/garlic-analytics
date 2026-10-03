@@ -23,13 +23,14 @@ namespace App\Collector\Device;
 
 use App\Collector\Exceptions\ParseException;
 use App\Collector\LogType;
-use App\Collector\PlayLogRecord;
+use App\Collector\RecordInterface;
+use InvalidArgumentException;
 
 /**
  * Translates the files of one device family into normalized records.
  *
  * Which adapter reads a file follows from its directory (see DeviceSource), the adapter itself
- * only tells the type of a file and parses it. More types (events, system reports)
+ * only tells the type of a file and parses it. More types (system reports)
  * are added here when their ingest exists.
  */
 interface DeviceAdapterInterface
@@ -40,8 +41,9 @@ interface DeviceAdapterInterface
     public function classify(string $fileName): ?LogType;
 
     /**
-     * @return list<PlayLogRecord>
+     * @return list<RecordInterface>
      * @throws ParseException
+     * @throws InvalidArgumentException the type has no parser
      */
-    public function parsePlayLog(string $filePath): array;
+    public function parse(LogType $type, string $filePath): array;
 }

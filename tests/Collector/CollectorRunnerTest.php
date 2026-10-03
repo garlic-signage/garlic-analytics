@@ -25,6 +25,7 @@ use App\Collector\BatchSplitter;
 use App\Collector\CollectorRunner;
 use App\Collector\Device\DeviceSource;
 use App\Collector\Device\Smil\SmilAdapter;
+use App\Collector\Device\Smil\SmilEventLogParser;
 use App\Collector\Device\Smil\SmilPlayLogParser;
 use App\Collector\DirectoryScanner;
 use App\Collector\Exceptions\RejectedIngestException;
@@ -57,7 +58,12 @@ class CollectorRunnerTest extends TestCase
             ['3', '2026-10-03T10:00:20+02:00', '2026-10-03T10:00:30+02:00'],
         ]));
         $this->put('playlog-broken.xml', '<report><player id="p">', 3001);
-        $this->put('event-a.xml', '<report/>', 3002);
+        $this->put('event-a.xml', self::eventLogXml('player-1', [
+            ['warning', '2026-10-03T10:00:00+02:00', 'ContentManager', 'FETCH_FAILED', ['resourceURI' => 'http://x']],
+            ['informational', '2026-10-03T10:00:01+02:00', 'System', 'STARTED', []],
+            ['warning', '2026-10-03T10:00:02+02:00', 'ContentManager', 'FETCH_FAILED', []],
+        ]));
+        $this->put('event-broken.xml', '<report><player id="p">', 3005);
         $this->put('system-a.xml', '<report/>', 3003);
         $this->put('notes.txt', 'hello', 3004);
     }
@@ -76,7 +82,7 @@ class CollectorRunnerTest extends TestCase
     private function runner(int $minAge = 60): CollectorRunner
     {
         return new CollectorRunner(
-            ['smil' => new DeviceSource(new SmilAdapter(new SmilPlayLogParser()), $this->upload)],
+            ['smil' => new DeviceSource(new SmilAdapter(new SmilPlayLogParser(), new SmilEventLogParser()), $this->upload)],
             new DirectoryScanner(),
             new BatchSplitter(2),
             $this->ingest,
@@ -107,24 +113,70 @@ class CollectorRunnerTest extends TestCase
     }
 
     #[Group('units')]
-    public function testDryRunReadsPlayLogsAndTouchesNothing(): void
+    public function testDryRunReadsPlayLogsAndEventsAndTouchesNothing(): void
     {
         $before = $this->names($this->upload);
 
         $results = $this->runner()->run(dryRun: true);
 
+        $statuses = $this->statuses($results);
+        ksort($statuses);
         static::assertSame([
+            'event-a.xml'        => 'parsed',
+            'event-broken.xml'   => 'failed',
+            'notes.txt'          => 'skipped-unknown',
             'playlog-a.xml'      => 'parsed',
             'playlog-broken.xml' => 'failed',
-            'event-a.xml'        => 'skipped-unsupported',
             'system-a.xml'       => 'skipped-unsupported',
-            'notes.txt'          => 'skipped-unknown',
-        ], $this->statuses($results));
+        ], $statuses);
         static::assertSame($before, $this->names($this->upload));
         static::assertSame([], $this->ingest->sent);
+
+        $byName = [];
+        foreach ($results as $result)
+            $byName[$result->fileName] = $result;
+        static::assertSame(3, $byName['playlog-a.xml']->events);
+        static::assertSame(2, $byName['playlog-a.xml']->batches);
+        static::assertSame('player-1', $byName['playlog-a.xml']->playerId);
+        static::assertSame(3, $byName['event-a.xml']->events);
+        static::assertSame(LogType::Event, $byName['event-a.xml']->type);
+    }
+
+    #[Group('units')]
+    public function testEventFileIsSentToTheEventEndpointInBlocks(): void
+    {
+        $results = $this->runner()->run(fileName: 'event-a.xml');
+
+        static::assertSame(['event-a.xml' => 'sent'], $this->statuses($results));
         static::assertSame(3, $results[0]->events);
         static::assertSame(2, $results[0]->batches);
-        static::assertSame('player-1', $results[0]->playerId);
+        static::assertSame([LogType::Event, LogType::Event], $this->ingest->types);
+        static::assertSame(
+            ['player_id' => 'player-1', 'event_time' => '2026-10-03T10:00:00+02:00', 'event_type' => 'warning', 'event_source' => 'ContentManager', 'event_name' => 'FETCH_FAILED', 'metadata' => ['resourceURI' => 'http://x']],
+            $this->ingest->sent[0][0]->toArray()
+        );
+        static::assertSame(['event-a.xml'], $this->names($this->base . '/processed'));
+    }
+
+    #[Group('units')]
+    public function testBrokenEventFileGoesToError(): void
+    {
+        $results = $this->runner()->run(fileName: 'event-broken.xml');
+
+        static::assertSame(['event-broken.xml' => 'rejected'], $this->statuses($results));
+        static::assertSame([], $this->ingest->sent);
+        static::assertContains('event-broken.xml.error', $this->names($this->base . '/error'));
+    }
+
+    #[Group('units')]
+    public function testEventLogWithoutEventsIsProcessedWithoutRequest(): void
+    {
+        $this->put('event-empty.xml', self::eventLogXml('player-3', []));
+
+        $results = $this->runner()->run(fileName: 'event-empty.xml');
+
+        static::assertSame(['event-empty.xml' => 'sent'], $this->statuses($results));
+        static::assertSame([], $this->ingest->sent);
     }
 
     #[Group('units')]
@@ -240,7 +292,6 @@ class CollectorRunnerTest extends TestCase
         $this->runner()->run();
 
         $left = $this->names($this->upload);
-        static::assertContains('event-a.xml', $left);
         static::assertContains('system-a.xml', $left);
         static::assertContains('notes.txt', $left);
     }
@@ -260,9 +311,9 @@ class CollectorRunnerTest extends TestCase
     #[Group('units')]
     public function testFilterByTypeLeavesOtherFilesAlone(): void
     {
-        $results = $this->runner()->run(type: LogType::Event);
+        $results = $this->runner()->run(type: LogType::System);
 
-        static::assertSame(['event-a.xml' => 'skipped-unsupported'], $this->statuses($results));
+        static::assertSame(['system-a.xml' => 'skipped-unsupported'], $this->statuses($results));
         static::assertSame([], $this->ingest->sent);
     }
 

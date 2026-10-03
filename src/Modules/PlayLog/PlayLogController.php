@@ -21,32 +21,9 @@ declare(strict_types=1);
 
 namespace App\Modules\PlayLog;
 
-use App\Framework\Exceptions\DatabaseException;
-use App\Framework\Exceptions\ValidationException;
-use JsonException;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
+use App\Framework\Ingest\IngestController;
 
 /**
- * POST /v1/playlog: takes a batch of play events (scope "ingest", checked by ApiKeyMiddleware).
- *
- * 201 {"accepted": n}, 422 on invalid data, 500 if the database fails.
+ * POST /v1/playlog: takes a batch of play events.
  */
-readonly class PlayLogController
-{
-    public function __construct(private PlayLogService $service) {}
-
-    /**
-     * @throws ValidationException
-     * @throws DatabaseException
-     * @throws JsonException
-     */
-    public function ingest(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
-    {
-        $accepted = $this->service->ingest($request->getParsedBody());
-
-        $response->getBody()->write(json_encode(['accepted' => $accepted], JSON_THROW_ON_ERROR));
-
-        return $response->withStatus(201)->withHeader('Content-Type', 'application/json');
-    }
-}
+readonly class PlayLogController extends IngestController {}

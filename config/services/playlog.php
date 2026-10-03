@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 use App\Framework\Core\Config\Config;
 use App\Framework\Database\ClickHouseClientInterface;
+use App\Framework\Validation\BatchValidator;
 use App\Framework\Validation\FieldValidator;
 use App\Modules\PlayLog\PlayLogController;
 use App\Modules\PlayLog\PlayLogRepository;
@@ -35,12 +36,12 @@ $dependencies[PlayLogValidator::class] = DI\factory(function (ContainerInterface
     /** @var Config $config */
     $config = $container->get(Config::class);
 
-    return new PlayLogValidator(
+    return new PlayLogValidator(new BatchValidator(
         new FieldValidator(),
         (int) $config->getConfigValue('max_events', 'playlog'),
         (int) $config->getConfigValue('max_age_days', 'playlog'),
         (int) $config->getConfigValue('max_future_seconds', 'playlog')
-    );
+    ));
 });
 
 $dependencies[PlayLogRepository::class] = DI\factory(function (ContainerInterface $container)

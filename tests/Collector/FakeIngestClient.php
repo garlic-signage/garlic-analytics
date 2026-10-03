@@ -23,7 +23,8 @@ namespace Tests\Collector;
 
 use App\Collector\Exceptions\RetryableIngestException;
 use App\Collector\Ingest\IngestClientInterface;
-use App\Collector\PlayLogRecord;
+use App\Collector\LogType;
+use App\Collector\RecordInterface;
 use Closure;
 
 /**
@@ -31,8 +32,10 @@ use Closure;
  */
 final class FakeIngestClient implements IngestClientInterface
 {
-    /** @var list<list<PlayLogRecord>> */
+    /** @var list<list<RecordInterface>> */
     public array $sent = [];
+    /** @var list<LogType> type of every block in $sent */
+    public array $types = [];
     /** @var (Closure(int): void)|null called with the number of the block (1, 2, ...) before it is accepted, may throw */
     public ?Closure $onSend = null;
     public ?string $notConfigured = null;
@@ -43,11 +46,12 @@ final class FakeIngestClient implements IngestClientInterface
             throw new RetryableIngestException($this->notConfigured);
     }
 
-    public function sendPlayLog(array $records): void
+    public function send(LogType $type, array $records): void
     {
         if ($this->onSend !== null)
             ($this->onSend)(count($this->sent) + 1);
 
-        $this->sent[] = $records;
+        $this->types[] = $type;
+        $this->sent[]  = $records;
     }
 }

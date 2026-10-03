@@ -25,6 +25,7 @@ namespace App\Framework\Database;
 use App\Framework\Exceptions\DatabaseException;
 use ClickHouseDB\Client;
 use ClickHouseDB\Exception\ClickHouseException;
+use ClickHouseDB\Query\Expression\Raw;
 use ClickHouseDB\Quote\FormatLine;
 
 readonly class ClickHouseClient implements ClickHouseClientInterface
@@ -48,7 +49,7 @@ readonly class ClickHouseClient implements ClickHouseClientInterface
 
         $values = [];
         foreach ($rows as $row)
-            $values[] = '(' . FormatLine::Insert($row) . ')';
+            $values[] = '(' . FormatLine::Insert(array_map($this->mapToLiteral(...), $row)) . ')';
 
         $sql = 'INSERT INTO `' . $table . '` (`' . implode('`,`', $columns) . '`) VALUES ' . implode(',', $values);
 
@@ -66,5 +67,26 @@ readonly class ClickHouseClient implements ClickHouseClientInterface
         {
             throw new DatabaseException('Insert into ' . $table . ' failed: ' . $e->getMessage(), 0, $e);
         }
+    }
+
+    /**
+     * The driver quotes a PHP array as a list "[...]", a Map needs the literal {'key':'value'}.
+     */
+    private function mapToLiteral(mixed $value): mixed
+    {
+        if (!is_array($value))
+            return $value;
+
+        /** @var array<array-key,string> $value */
+        $pairs = [];
+        foreach ($value as $key => $item)
+            $pairs[] = $this->quote((string) $key) . ':' . $this->quote($item);
+
+        return new Raw('{' . implode(',', $pairs) . '}');
+    }
+
+    private function quote(string $value): string
+    {
+        return "'" . addcslashes($value, "\\'") . "'";
     }
 }

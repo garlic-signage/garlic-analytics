@@ -23,7 +23,9 @@ namespace App\Collector\Ingest;
 
 use App\Collector\Exceptions\RejectedIngestException;
 use App\Collector\Exceptions\RetryableIngestException;
-use App\Collector\PlayLogRecord;
+use App\Collector\LogType;
+use App\Collector\RecordInterface;
+use InvalidArgumentException;
 
 /**
  * The way into the ingest API. The collector only knows this interface, so the API can live elsewhere
@@ -39,11 +41,12 @@ interface IngestClientInterface
     public function ensureConfigured(): void;
 
     /**
-     * Sends one block of play log records. Returns normally only if the API accepted it.
+     * Sends one block of records of a type to its endpoint. Returns normally only if the API accepted it.
      *
-     * @param list<PlayLogRecord> $records
+     * @param list<RecordInterface> $records
+     * @throws InvalidArgumentException the type has no endpoint
      * @throws RejectedIngestException  the data is invalid
      * @throws RetryableIngestException try again later
      */
-    public function sendPlayLog(array $records): void;
+    public function send(LogType $type, array $records): void;
 }

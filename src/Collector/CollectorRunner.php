@@ -30,7 +30,7 @@ use App\Collector\Ingest\IngestClientInterface;
 use InvalidArgumentException;
 
 /**
- * Goes through the upload directories of the devices and hands the play logs to the ingest API.
+ * Goes through the upload directories of the devices and hands the play logs and events to the ingest API.
  *
  * Per file: parse, send the blocks one after the other, then move the file.
  * - all blocks accepted: file to processed/
@@ -41,7 +41,7 @@ use InvalidArgumentException;
  * Blocks are cut the same way every time, so blocks that were already accepted before a failure
  * are dropped by the API when the file is sent again.
  *
- * Only play logs are handled so far. Files of other types, or with an unknown name, stay where they are.
+ * Only the types with an ingest endpoint are handled (see LogType::endpoint()). Files of other types, or with an unknown name, stay where they are.
  * With $dryRun nothing is sent or moved, the files are only read.
  */
 readonly class CollectorRunner
@@ -90,8 +90,10 @@ readonly class CollectorRunner
                 if ($type !== null && $fileType !== $type)
                     continue;
 
-                $result = $this->skipped($name, $baseName, $fileType)
-                    ?? ($dryRun ? $this->inspect($name, $source, $path) : $this->process($name, $source, $path));
+                if ($fileType === null || $fileType->endpoint() === null)
+                    $result = $this->skipped($name, $baseName, $fileType);
+                else
+                    $result = $dryRun ? $this->inspect($name, $source, $path, $fileType) : $this->process($name, $source, $path, $fileType);
                 $results[] = $result;
 
                 if ($result->status === FileStatus::Retry)
@@ -102,32 +104,30 @@ readonly class CollectorRunner
         return $results;
     }
 
-    private function skipped(string $device, string $fileName, ?LogType $type): ?FileResult
+    private function skipped(string $device, string $fileName, ?LogType $type): FileResult
     {
         if ($type === null)
             return new FileResult($device, $fileName, null, FileStatus::SkippedUnknown, message: 'unknown file name');
-        if ($type !== LogType::PlayLog)
-            return new FileResult($device, $fileName, $type, FileStatus::SkippedUnsupported, message: 'no ingest for ' . $type->value . ' yet');
 
-        return null;
+        return new FileResult($device, $fileName, $type, FileStatus::SkippedUnsupported, message: 'no ingest for ' . $type->value . ' yet');
     }
 
-    private function inspect(string $device, DeviceSource $source, string $path): FileResult
+    private function inspect(string $device, DeviceSource $source, string $path, LogType $type): FileResult
     {
         $fileName = basename($path);
         try
         {
-            $records = $source->adapter->parsePlayLog($path);
+            $records = $source->adapter->parse($type, $path);
         }
         catch (ParseException $e)
         {
-            return new FileResult($device, $fileName, LogType::PlayLog, FileStatus::Failed, message: $e->getMessage());
+            return new FileResult($device, $fileName, $type, FileStatus::Failed, message: $e->getMessage());
         }
 
         return new FileResult(
             $device,
             $fileName,
-            LogType::PlayLog,
+            $type,
             FileStatus::Parsed,
             $records[0]->playerId ?? null,
             count($records),
@@ -135,16 +135,16 @@ readonly class CollectorRunner
         );
     }
 
-    private function process(string $device, DeviceSource $source, string $path): FileResult
+    private function process(string $device, DeviceSource $source, string $path, LogType $type): FileResult
     {
         $fileName = basename($path);
         try
         {
-            $records = $source->adapter->parsePlayLog($path);
+            $records = $source->adapter->parse($type, $path);
         }
         catch (ParseException $e)
         {
-            return $this->reject($device, $source, $path, $e->getMessage());
+            return $this->reject($device, $source, $path, $type, $e->getMessage());
         }
 
         $playerId = $records[0]->playerId ?? null;
@@ -155,15 +155,15 @@ readonly class CollectorRunner
             $where = $total > 1 ? 'block ' . ($index + 1) . '/' . $total . ': ' : '';
             try
             {
-                $this->ingest->sendPlayLog($block);
+                $this->ingest->send($type, $block);
             }
             catch (RejectedIngestException $e)
             {
-                return $this->reject($device, $source, $path, $where . $e->getMessage(), $playerId);
+                return $this->reject($device, $source, $path, $type, $where . $e->getMessage(), $playerId);
             }
             catch (RetryableIngestException $e)
             {
-                return new FileResult($device, $fileName, LogType::PlayLog, FileStatus::Retry, $playerId, message: $where . $e->getMessage());
+                return new FileResult($device, $fileName, $type, FileStatus::Retry, $playerId, message: $where . $e->getMessage());
             }
         }
 
@@ -173,13 +173,13 @@ readonly class CollectorRunner
         }
         catch (ArchiveException $e)
         {
-            return new FileResult($device, $fileName, LogType::PlayLog, FileStatus::Retry, $playerId, message: 'sent, but ' . $e->getMessage());
+            return new FileResult($device, $fileName, $type, FileStatus::Retry, $playerId, message: 'sent, but ' . $e->getMessage());
         }
 
-        return new FileResult($device, $fileName, LogType::PlayLog, FileStatus::Sent, $playerId, count($records), $total);
+        return new FileResult($device, $fileName, $type, FileStatus::Sent, $playerId, count($records), $total);
     }
 
-    private function reject(string $device, DeviceSource $source, string $path, string $message, ?string $playerId = null): FileResult
+    private function reject(string $device, DeviceSource $source, string $path, LogType $type, string $message, ?string $playerId = null): FileResult
     {
         $fileName = basename($path);
         try
@@ -188,9 +188,9 @@ readonly class CollectorRunner
         }
         catch (ArchiveException $e)
         {
-            return new FileResult($device, $fileName, LogType::PlayLog, FileStatus::Retry, $playerId, message: $message . ' (and ' . $e->getMessage() . ')');
+            return new FileResult($device, $fileName, $type, FileStatus::Retry, $playerId, message: $message . ' (and ' . $e->getMessage() . ')');
         }
 
-        return new FileResult($device, $fileName, LogType::PlayLog, FileStatus::Rejected, $playerId, message: $message);
+        return new FileResult($device, $fileName, $type, FileStatus::Rejected, $playerId, message: $message);
     }
 }

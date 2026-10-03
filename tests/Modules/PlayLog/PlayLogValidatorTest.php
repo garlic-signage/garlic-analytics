@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace Tests\Modules\PlayLog;
 
 use App\Framework\Exceptions\ValidationException;
+use App\Framework\Validation\BatchValidator;
 use App\Framework\Validation\FieldValidator;
 use App\Modules\PlayLog\PlayLogValidator;
 use DateMalformedStringException;
@@ -36,7 +37,7 @@ class PlayLogValidatorTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->validator = new PlayLogValidator(new FieldValidator(), 3, 730, 86400);
+        $this->validator = new PlayLogValidator(new BatchValidator(new FieldValidator(), 3, 730, 86400));
         $this->now       = new DateTimeImmutable('2026-10-03T12:00:00Z');
     }
 
@@ -203,7 +204,7 @@ class PlayLogValidatorTest extends TestCase
     #[Group('units')]
     public function testErrorsAreCapped(): void
     {
-        $validator = new PlayLogValidator(new FieldValidator(), 1000, 730, 86400);
+        $validator = new PlayLogValidator(new BatchValidator(new FieldValidator(), 1000, 730, 86400));
 
         try
         {

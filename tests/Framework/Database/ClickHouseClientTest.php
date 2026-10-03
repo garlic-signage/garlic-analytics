@@ -47,6 +47,17 @@ class ClickHouseClientTest extends TestCase
     }
 
     #[Group('units')]
+    public function testInsertWritesMapsAsLiterals(): void
+    {
+        $driver = $this->createMock(Client::class);
+        $driver->expects($this->once())
+            ->method('write')
+            ->with("INSERT INTO `t` (`a`,`m`) VALUES ('x',{'k':'it\\'s','z':'v'}),('y',{})", [], true, []);
+
+        new ClickHouseClient($driver)->insert('t', [['x', ['k' => "it's", 'z' => 'v']], ['y', []]], ['a', 'm']);
+    }
+
+    #[Group('units')]
     public function testInsertWithoutTokenSendsNoSettings(): void
     {
         $driver = $this->createMock(Client::class);

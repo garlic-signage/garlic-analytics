@@ -43,8 +43,9 @@ readonly class BatchSplitter
     }
 
     /**
-     * @param list<PlayLogRecord> $records
-     * @return list<list<PlayLogRecord>>
+     * @template T of RecordInterface
+     * @param list<T> $records
+     * @return list<list<T>>
      */
     public function split(array $records): array
     {

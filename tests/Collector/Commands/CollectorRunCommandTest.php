@@ -26,6 +26,7 @@ use App\Collector\Commands\CollectorRunCommand;
 use App\Collector\CollectorRunner;
 use App\Collector\Device\DeviceSource;
 use App\Collector\Device\Smil\SmilAdapter;
+use App\Collector\Device\Smil\SmilEventLogParser;
 use App\Collector\Device\Smil\SmilPlayLogParser;
 use App\Collector\DirectoryScanner;
 use App\Collector\Exceptions\RejectedIngestException;
@@ -57,7 +58,7 @@ class CollectorRunCommandTest extends TestCase
             ['2', '2026-10-03T10:00:10+02:00', '2026-10-03T10:00:20+02:00'],
         ]));
         $this->put('playlog-broken.xml', '<report>');
-        $this->put('event-a.xml', '<report/>');
+        $this->put('system-a.xml', '<report/>');
     }
 
     protected function tearDown(): void
@@ -74,7 +75,7 @@ class CollectorRunCommandTest extends TestCase
     private function tester(): CommandTester
     {
         $runner = new CollectorRunner(
-            ['smil' => new DeviceSource(new SmilAdapter(new SmilPlayLogParser()), $this->base . '/upload')],
+            ['smil' => new DeviceSource(new SmilAdapter(new SmilPlayLogParser(), new SmilEventLogParser()), $this->base . '/upload')],
             new DirectoryScanner(),
             new BatchSplitter(5000),
             $this->ingest,
@@ -95,7 +96,7 @@ class CollectorRunCommandTest extends TestCase
         $display = $tester->getDisplay();
         static::assertSame(Command::SUCCESS, $status);
         static::assertStringContainsString('parsed   smil/playlog-a.xml  player player-1  2 events in 1 batch(es)', $display);
-        static::assertStringContainsString('skipped  smil/event-a.xml  (no ingest for event yet)', $display);
+        static::assertStringContainsString('skipped  smil/system-a.xml  (no ingest for system yet)', $display);
         static::assertStringContainsString('failed   smil/playlog-broken.xml', $display);
         static::assertStringContainsString('Files: 1 parsed, 1 skipped, 1 failed. Events: 2 in 1 batch(es). Dry run', $display);
         static::assertFileExists($this->base . '/upload/playlog-a.xml');
@@ -115,7 +116,7 @@ class CollectorRunCommandTest extends TestCase
         static::assertStringContainsString('Files: 1 sent, 1 rejected, 1 skipped, 0 kept for retry. Events accepted by the API: 2 in 1 batch(es). Duplicates are dropped by the API without notice.', $display);
         static::assertFileExists($this->base . '/processed/playlog-a.xml');
         static::assertFileExists($this->base . '/error/playlog-broken.xml.error');
-        static::assertFileExists($this->base . '/upload/event-a.xml');
+        static::assertFileExists($this->base . '/upload/system-a.xml');
     }
 
     #[Group('units')]
@@ -219,7 +220,7 @@ class CollectorRunCommandTest extends TestCase
 
         $display = $tester->getDisplay();
         static::assertStringContainsString('playlog-a.xml', $display);
-        static::assertStringNotContainsString('event-a.xml', $display);
+        static::assertStringNotContainsString('system-a.xml', $display);
         static::assertStringNotContainsString('broken', $display);
     }
 }

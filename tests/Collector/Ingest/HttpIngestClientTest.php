@@ -24,6 +24,8 @@ namespace Tests\Collector\Ingest;
 use App\Collector\Exceptions\RejectedIngestException;
 use App\Collector\Exceptions\RetryableIngestException;
 use App\Collector\Ingest\HttpIngestClient;
+use App\Collector\EventLogRecord;
+use App\Collector\LogType;
 use App\Collector\PlayLogRecord;
 use ArrayObject;
 use GuzzleHttp\Client;
@@ -33,6 +35,7 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -74,7 +77,7 @@ class HttpIngestClientTest extends TestCase
     #[Group('units')]
     public function testPostsEventsWithBearerKey(): void
     {
-        $this->client([new Response(201, [], '{"accepted":1}')])->sendPlayLog($this->records());
+        $this->client([new Response(201, [], '{"accepted":1}')])->send(LogType::PlayLog, $this->records());
 
         static::assertCount(1, $this->history);
         $request = $this->lastRequest();
@@ -89,9 +92,37 @@ class HttpIngestClientTest extends TestCase
     }
 
     #[Group('units')]
+    public function testEventsGoToTheEventLogEndpoint(): void
+    {
+        $records = [
+            new EventLogRecord('p1', '2026-10-03T15:30:27+02:00', 'warning', 'ContentManager', 'FETCH_FAILED', ['resourceURI' => 'http://x']),
+            new EventLogRecord('p1', '2026-10-03T15:30:28+02:00', 'informational', 'System', 'STARTED'),
+        ];
+
+        $this->client([new Response(201)])->send(LogType::Event, $records);
+
+        static::assertSame('http://api.test/v1/eventlog', (string) $this->lastRequest()->getUri());
+        static::assertSame(
+            ['events' => [
+                ['player_id' => 'p1', 'event_time' => '2026-10-03T15:30:27+02:00', 'event_type' => 'warning', 'event_source' => 'ContentManager', 'event_name' => 'FETCH_FAILED', 'metadata' => ['resourceURI' => 'http://x']],
+                ['player_id' => 'p1', 'event_time' => '2026-10-03T15:30:28+02:00', 'event_type' => 'informational', 'event_source' => 'System', 'event_name' => 'STARTED'],
+            ]],
+            json_decode((string) $this->lastRequest()->getBody(), true)
+        );
+    }
+
+    #[Group('units')]
+    public function testTypeWithoutEndpointIsRefusedBeforeAnyRequest(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->client([])->send(LogType::System, $this->records());
+    }
+
+    #[Group('units')]
     public function testTrailingSlashOfTheUrlIsIgnored(): void
     {
-        $this->client([new Response(201)], 'http://api.test/')->sendPlayLog($this->records());
+        $this->client([new Response(201)], 'http://api.test/')->send(LogType::PlayLog, $this->records());
 
         static::assertSame('http://api.test/v1/playlog', (string) $this->lastRequest()->getUri());
     }
@@ -103,7 +134,7 @@ class HttpIngestClientTest extends TestCase
         $this->expectException(RejectedIngestException::class);
         $this->expectExceptionMessage('HTTP ' . $status);
 
-        $this->client([new Response($status, [], '{"error":"nope"}')])->sendPlayLog($this->records());
+        $this->client([new Response($status, [], '{"error":"nope"}')])->send(LogType::PlayLog, $this->records());
     }
 
     /** @return array<string,array{int}> */
@@ -119,7 +150,7 @@ class HttpIngestClientTest extends TestCase
         $this->expectException(RetryableIngestException::class);
         $this->expectExceptionMessage('HTTP ' . $status);
 
-        $this->client([new Response($status, [], '{"error":"nope"}')])->sendPlayLog($this->records());
+        $this->client([new Response($status, [], '{"error":"nope"}')])->send(LogType::PlayLog, $this->records());
     }
 
     /** @return array<string,array{int}> */
@@ -150,7 +181,7 @@ class HttpIngestClientTest extends TestCase
 
         try
         {
-            $this->client([new Response(422, [], $body)])->sendPlayLog($this->records());
+            $this->client([new Response(422, [], $body)])->send(LogType::PlayLog, $this->records());
             static::fail('RejectedIngestException expected');
         }
         catch (RejectedIngestException $e)
@@ -168,7 +199,7 @@ class HttpIngestClientTest extends TestCase
 
         try
         {
-            $this->client([new Response(422, [], json_encode(['error' => 'Validation failed', 'errors' => $errors], JSON_THROW_ON_ERROR))])->sendPlayLog($this->records());
+            $this->client([new Response(422, [], json_encode(['error' => 'Validation failed', 'errors' => $errors], JSON_THROW_ON_ERROR))])->send(LogType::PlayLog, $this->records());
             static::fail('RejectedIngestException expected');
         }
         catch (RejectedIngestException $e)
@@ -183,7 +214,7 @@ class HttpIngestClientTest extends TestCase
     {
         try
         {
-            $this->client([new Response(502, [], str_repeat('x', 500))])->sendPlayLog($this->records());
+            $this->client([new Response(502, [], str_repeat('x', 500))])->send(LogType::PlayLog, $this->records());
             static::fail('RetryableIngestException expected');
         }
         catch (RetryableIngestException $e)
@@ -198,7 +229,7 @@ class HttpIngestClientTest extends TestCase
         $this->expectException(RetryableIngestException::class);
         $this->expectExceptionMessage('API not reachable');
 
-        $this->client([new ConnectException('Connection refused', new Request('POST', '/v1/playlog'))])->sendPlayLog($this->records());
+        $this->client([new ConnectException('Connection refused', new Request('POST', '/v1/playlog'))])->send(LogType::PlayLog, $this->records());
     }
 
     #[Group('units')]
@@ -208,7 +239,7 @@ class HttpIngestClientTest extends TestCase
         {
             try
             {
-                $this->client([], $url, $key)->sendPlayLog($this->records());
+                $this->client([], $url, $key)->send(LogType::PlayLog, $this->records());
                 static::fail('RetryableIngestException expected');
             }
             catch (RetryableIngestException $e)

@@ -21,34 +21,11 @@ declare(strict_types=1);
 
 namespace App\Modules\PlayLog;
 
-use App\Framework\Exceptions\DatabaseException;
-use App\Framework\Exceptions\ValidationException;
-use DateMalformedStringException;
-use JsonException;
+use App\Framework\Ingest\IngestService;
 
 /**
  * Ingest of play events: validate, then store.
+ *
+ * @extends IngestService<PlayLogEvent>
  */
-readonly class PlayLogService
-{
-    public function __construct(
-        private PlayLogValidator  $validator,
-        private PlayLogRepository $repository
-    ) {}
-
-    /**
-     * @param mixed $body
-     * @return int number of events in the request (a repeated batch is dropped silently, the answer stays the same)
-     * @throws ValidationException
-     * @throws DatabaseException
-     * @throws JsonException
-     * @throws DateMalformedStringException
-     */
-    public function ingest(mixed $body): int
-    {
-        $events = $this->validator->validate($body);
-        $this->repository->insertBatch($events);
-
-        return count($events);
-    }
-}
+readonly class PlayLogService extends IngestService {}

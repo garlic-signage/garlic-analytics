@@ -24,6 +24,7 @@ use App\Collector\Commands\CollectorRunCommand;
 use App\Collector\CollectorRunner;
 use App\Collector\Device\DeviceSource;
 use App\Collector\Device\Smil\SmilAdapter;
+use App\Collector\Device\Smil\SmilEventLogParser;
 use App\Collector\Device\Smil\SmilPlayLogParser;
 use App\Collector\DirectoryScanner;
 use App\Collector\FileArchive;
@@ -61,7 +62,7 @@ $dependencies[CollectorRunner::class] = DI\factory(function (ContainerInterface 
     // One entry per device family. Its files are uploaded to <collectorDir>/<name>/upload.
     $devices = [
         'smil' => new DeviceSource(
-            new SmilAdapter(new SmilPlayLogParser()),
+            new SmilAdapter(new SmilPlayLogParser(), new SmilEventLogParser()),
             $config->getPaths('collectorDir') . '/smil/upload'
         ),
     ];

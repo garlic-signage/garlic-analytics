@@ -23,13 +23,15 @@ namespace App\Collector\Ingest;
 
 use App\Collector\Exceptions\RejectedIngestException;
 use App\Collector\Exceptions\RetryableIngestException;
-use App\Collector\PlayLogRecord;
+use App\Collector\LogType;
+use App\Collector\RecordInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
+use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
 
 /**
- * Sends the records to POST /v1/playlog of the ingest API with the API key of the collector.
+ * Sends the records to the endpoint of their type (POST /v1/playlog, POST /v1/eventlog) of the ingest API with the API key of the collector.
  *
  * Only 400, 413 and 422 mean the data is wrong. Every other answer that is not 2xx leaves the file
  * where it is: 401, 403, 404 and 405 point to a wrong key, rights or URL, which must not send
@@ -54,15 +56,16 @@ readonly class HttpIngestClient implements IngestClientInterface
             throw new RetryableIngestException('COLLECTOR_API_KEY is not set, create a key with "bin/console apikey:create collector --scope=ingest"');
     }
 
-    public function sendPlayLog(array $records): void
+    public function send(LogType $type, array $records): void
     {
+        $endpoint = $type->endpoint() ?? throw new InvalidArgumentException('There is no ingest endpoint for ' . $type->value);
         $this->ensureConfigured();
 
         try
         {
-            $response = $this->http->request('POST', rtrim($this->baseUrl, '/') . '/v1/playlog', [
+            $response = $this->http->request('POST', rtrim($this->baseUrl, '/') . $endpoint, [
                 'headers'         => ['Authorization' => 'Bearer ' . $this->apiKey, 'Accept' => 'application/json'],
-                'json'            => ['events' => array_map(static fn(PlayLogRecord $record): array => $record->toArray(), $records)],
+                'json'            => ['events' => array_map(static fn(RecordInterface $record): array => $record->toArray(), $records)],
                 'http_errors'     => false,
                 'allow_redirects' => false,
             ]);

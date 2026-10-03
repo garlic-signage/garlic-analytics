@@ -31,103 +31,40 @@ use XMLReader;
  *   <report xmlns="..."><player id="..."><contentPlayLog>
  *     <contentPlayed><contentId/><startTime/><endTime/></contentPlayed> ...
  *
- * The namespace is ignored (it differs between report types), elements are matched by local name.
- * The whole file is read before anything is returned, so a broken file never yields half of its records.
+ * @extends SmilReportParser<PlayLogRecord>
  */
-readonly class SmilPlayLogParser
+readonly class SmilPlayLogParser extends SmilReportParser
 {
     private const array FIELDS = ['contentId', 'startTime', 'endTime'];
 
-    /**
-     * @return list<PlayLogRecord>
-     * @throws ParseException
-     */
-    public function parse(string $filePath): array
+    protected function logElement(): string
     {
-        if (!is_file($filePath) || !is_readable($filePath))
-            throw new ParseException('File is not readable');
+        return 'contentPlayLog';
+    }
 
-        $previous = libxml_use_internal_errors(true);
-        libxml_clear_errors();
-        $reader = XMLReader::open($filePath, null, LIBXML_NONET);
+    protected function itemElement(): string
+    {
+        return 'contentPlayed';
+    }
 
-        try
-        {
-            if ($reader === false)
-                throw new ParseException('File is not valid XML');
+    protected function description(): string
+    {
+        return 'a play log';
+    }
 
-            return $this->read($reader);
-        }
-        finally
-        {
-            if ($reader !== false)
-                $reader->close();
-            libxml_clear_errors();
-            libxml_use_internal_errors($previous);
-        }
+    protected function collect(XMLReader $reader, string $name, array &$fields): void
+    {
+        if (in_array($name, self::FIELDS, true))
+            $fields[$name] = trim($reader->readString());
     }
 
     /**
-     * @return list<PlayLogRecord>
      * @throws ParseException
      */
-    private function read(XMLReader $reader): array
+    protected function buildRecord(string $playerId, array $fields, int $number): PlayLogRecord
     {
-        $records  = [];
-        $playerId = null;
-        $hasLog   = false;
-        $current  = null;
-        $isRoot   = true;
+        $this->requireFields($fields, self::FIELDS, $number);
 
-        while ($reader->read())
-        {
-            if ($reader->nodeType === XMLReader::ELEMENT)
-            {
-                $name = $reader->localName;
-                if ($isRoot && $name !== 'report')
-                    throw new ParseException('Root element must be "report", found "' . $name . '"');
-                $isRoot = false;
-
-                if ($name === 'player')
-                    $playerId ??= $reader->getAttribute('id');
-                elseif ($name === 'contentPlayLog')
-                    $hasLog = true;
-                elseif ($name === 'contentPlayed' && $hasLog)
-                    $current = [];
-                elseif ($current !== null && in_array($name, self::FIELDS, true))
-                    $current[$name] = trim($reader->readString());
-            }
-            elseif ($reader->nodeType === XMLReader::END_ELEMENT && $current !== null && $reader->localName === 'contentPlayed')
-            {
-                $records[] = $this->buildRecord($playerId, $current, count($records) + 1);
-                $current   = null;
-            }
-        }
-
-        $errors = libxml_get_errors();
-        if ($errors !== [])
-            throw new ParseException('Invalid XML: ' . trim($errors[0]->message) . ' (line ' . $errors[0]->line . ')');
-        if (!$hasLog)
-            throw new ParseException('Element "contentPlayLog" is missing, this is not a play log');
-
-        return $records;
-    }
-
-    /**
-     * @param array<string,string> $fields
-     * @throws ParseException
-     */
-    private function buildRecord(?string $playerId, array $fields, int $number): PlayLogRecord
-    {
-        if ($playerId === null || trim($playerId) === '')
-            throw new ParseException('Attribute "id" of element "player" is missing');
-
-        foreach (self::FIELDS as $field)
-        {
-            if (($fields[$field] ?? '') === '')
-                throw new ParseException('contentPlayed #' . $number . ' has no ' . $field);
-        }
-
-        return new PlayLogRecord(trim($playerId), $fields['contentId'], $fields['startTime'], $fields['endTime']);
+        return new PlayLogRecord($playerId, $fields['contentId'], $fields['startTime'], $fields['endTime']);
     }
 }

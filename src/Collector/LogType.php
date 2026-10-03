@@ -29,4 +29,17 @@ enum LogType: string
     case PlayLog = 'playlog';
     case Event   = 'event';
     case System  = 'system';
+
+    /**
+     * Path of the ingest endpoint, null if there is none yet.
+     */
+    public function endpoint(): ?string
+    {
+        return match ($this)
+        {
+            self::PlayLog => '/v1/playlog',
+            self::Event   => '/v1/eventlog',
+            self::System  => null,
+        };
+    }
 }

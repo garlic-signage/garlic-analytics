@@ -21,54 +21,41 @@ declare(strict_types=1);
 
 namespace App\Modules\PlayLog;
 
-use App\Framework\Database\ClickHouseClientInterface;
+use App\Framework\Database\BatchRepository;
 use App\Framework\Exceptions\DatabaseException;
+use App\Framework\Ingest\IngestRepositoryInterface;
 use JsonException;
 
 /**
- * Inserts and queries the table play_log.
+ * Inserts into the table play_log.
  *
  * ClickHouse fills duration_s and received_at, play_hourly by its materialized view.
+ *
+ * @implements IngestRepositoryInterface<PlayLogEvent>
  */
-readonly class PlayLogRepository
+readonly class PlayLogRepository extends BatchRepository implements IngestRepositoryInterface
 {
-    private const string TABLE = 'play_log';
+    private const string TABLE       = 'play_log';
     private const string TIME_FORMAT = 'Y-m-d H:i:s';
 
-    public function __construct(private ClickHouseClientInterface $client) {}
-
     /**
-     * Writes all events with one INSERT.
-     *
-     * The deduplication token is a hash of the events: the same batch sent again (client retry)
-     * is dropped, also in play_hourly. Another batch with the same events in another
-     * order or size counts as new.
-     *
      * @param list<PlayLogEvent> $events
      * @throws DatabaseException
      * @throws JsonException
      */
     public function insertBatch(array $events): void
     {
-        $rows    = [];
-        $context = hash_init('sha256');
+        $rows = [];
         foreach ($events as $event)
         {
-            $row = [
+            $rows[] = [
                 $event->playerId,
                 $event->contentId,
                 $event->startTime->format(self::TIME_FORMAT),
                 $event->endTime->format(self::TIME_FORMAT)
             ];
-            hash_update($context, json_encode($row, JSON_THROW_ON_ERROR) . "\n");
-            $rows[] = $row;
         }
 
-        $this->client->insert(
-            self::TABLE,
-            $rows,
-            ['player_id', 'content_id', 'start_time', 'end_time'],
-            hash_final($context)
-        );
+        $this->insertRows(self::TABLE, $rows, ['player_id', 'content_id', 'start_time', 'end_time']);
     }
 }

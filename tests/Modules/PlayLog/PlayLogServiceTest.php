@@ -23,6 +23,7 @@ namespace Tests\Modules\PlayLog;
 
 use App\Framework\Database\ClickHouseClientInterface;
 use App\Framework\Exceptions\ValidationException;
+use App\Framework\Validation\BatchValidator;
 use App\Framework\Validation\FieldValidator;
 use App\Modules\PlayLog\PlayLogRepository;
 use App\Modules\PlayLog\PlayLogService;
@@ -37,7 +38,7 @@ class PlayLogServiceTest extends TestCase
     private function service(ClickHouseClientInterface $client): PlayLogService
     {
         return new PlayLogService(
-            new PlayLogValidator(new FieldValidator(), 10, 36500, 86400),
+            new PlayLogValidator(new BatchValidator(new FieldValidator(), 10, 36500, 86400)),
             new PlayLogRepository($client)
         );
     }

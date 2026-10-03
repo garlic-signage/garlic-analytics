@@ -25,7 +25,7 @@ namespace App\Collector;
  * One playback as the device reported it, in the format of POST /v1/playlog.
  * The times stay as sent (ISO 8601 with offset), the API converts them to UTC.
  */
-readonly class PlayLogRecord
+readonly class PlayLogRecord implements RecordInterface
 {
     public function __construct(
         public string $playerId,

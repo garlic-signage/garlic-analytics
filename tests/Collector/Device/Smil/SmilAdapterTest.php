@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace Tests\Collector\Device\Smil;
 
 use App\Collector\Device\Smil\SmilAdapter;
+use App\Collector\Device\Smil\SmilEventLogParser;
 use App\Collector\Device\Smil\SmilPlayLogParser;
 use App\Collector\LogType;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -34,7 +35,7 @@ class SmilAdapterTest extends TestCase
     #[DataProvider('fileNames')]
     public function testClassifyByFileName(string $fileName, ?LogType $expected): void
     {
-        static::assertSame($expected, new SmilAdapter(new SmilPlayLogParser())->classify($fileName));
+        static::assertSame($expected, new SmilAdapter(new SmilPlayLogParser(), new SmilEventLogParser())->classify($fileName));
     }
 
     /** @return array<string,array{string,?LogType}> */

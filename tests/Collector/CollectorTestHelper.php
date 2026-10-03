@@ -72,4 +72,25 @@ trait CollectorTestHelper
             . '<report xmlns="http://schemas.garlic-player.com/gapi-1.0"><date>2026-10-03T14:35:25Z</date><version>1.0</version>'
             . '<player id="' . $playerId . '"><contentPlayLog>' . "\n" . $items . '</contentPlayLog></player></report>';
     }
+
+    /**
+     * @param list<array{string,string,string,string,array<string,string>}> $events type, time, source, name, metadata (no metadata element if empty)
+     */
+    private static function eventLogXml(string $playerId, array $events): string
+    {
+        $items = '';
+        foreach ($events as [$type, $time, $source, $name, $metadata])
+        {
+            $meta = '';
+            foreach ($metadata as $key => $content)
+                $meta .= '<meta name="' . $key . '" content="' . htmlspecialchars($content, ENT_XML1 | ENT_QUOTES) . '"/>';
+
+            $items .= "<event><eventType>$type</eventType><eventTime>$time</eventTime><eventSource>$source</eventSource><eventName>$name</eventName>"
+                . ($meta === '' ? '' : "<metadata>$meta</metadata>") . "</event>\n";
+        }
+
+        return '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
+            . '<report xmlns="http://schemas.garlic-player.com/gapi-1.0"><date>2026-10-03T14:35:25Z</date><version>1.0</version>'
+            . '<player id="' . $playerId . '"><playerEventLog>' . "\n" . $items . '</playerEventLog></player></report>';
+    }
 }

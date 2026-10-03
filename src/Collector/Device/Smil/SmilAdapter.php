@@ -23,14 +23,18 @@ namespace App\Collector\Device\Smil;
 
 use App\Collector\Device\DeviceAdapterInterface;
 use App\Collector\LogType;
-use App\Collector\PlayLogRecord;
+use App\Collector\RecordInterface;
+use InvalidArgumentException;
 
 /**
  * Garlic player and other SMIL players: playlog-*.xml, event-*.xml, and system-*.xml.
  */
 readonly class SmilAdapter implements DeviceAdapterInterface
 {
-    public function __construct(private SmilPlayLogParser $playLogParser) {}
+    public function __construct(
+        private SmilPlayLogParser  $playLogParser,
+        private SmilEventLogParser $eventLogParser
+    ) {}
 
     public function classify(string $fileName): ?LogType
     {
@@ -47,10 +51,15 @@ readonly class SmilAdapter implements DeviceAdapterInterface
     }
 
     /**
-     * @return list<PlayLogRecord>
+     * @return list<RecordInterface>
      */
-    public function parsePlayLog(string $filePath): array
+    public function parse(LogType $type, string $filePath): array
     {
-        return $this->playLogParser->parse($filePath);
+        return match ($type)
+        {
+            LogType::PlayLog => $this->playLogParser->parse($filePath),
+            LogType::Event   => $this->eventLogParser->parse($filePath),
+            LogType::System  => throw new InvalidArgumentException('There is no parser for ' . $type->value . ' yet'),
+        };
     }
 }
