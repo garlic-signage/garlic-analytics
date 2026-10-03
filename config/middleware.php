@@ -19,6 +19,7 @@
 */
 declare(strict_types=1);
 
+use App\Framework\Core\Config\Config;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -63,9 +64,12 @@ return /** @throws ContainerExceptionInterface|NotFoundExceptionInterface */ fun
     $app->addBodyParsingMiddleware();
     $app->addRoutingMiddleware();
 
-    /** @var callable(App<ContainerInterface>, LoggerInterface): void $errorHandling */
+    /** @var Config $config */
+    $config = $container->get(Config::class);
+
+    /** @var callable(App<ContainerInterface>, LoggerInterface, bool): void $errorHandling */
     $errorHandling = require __DIR__ . '/error_handling.php';
-    $errorHandling($app, $logger); // call error middleware as last
+    $errorHandling($app, $logger, $config->isDebug()); // call error middleware as last
 
     return $app;
 };

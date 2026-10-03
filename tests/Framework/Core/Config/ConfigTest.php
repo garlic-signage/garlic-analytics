@@ -92,6 +92,15 @@ class ConfigTest extends TestCase
     }
 
 	#[Group('units')]
+	public function testIsDebugOnlyWhenAppDebugIsTrue(): void
+	{
+		static::assertTrue(new Config($this->configLoaderStub, [], ['APP_DEBUG' => 'true'])->isDebug());
+		static::assertFalse(new Config($this->configLoaderStub, [], ['APP_DEBUG' => 'false'])->isDebug());
+		static::assertFalse(new Config($this->configLoaderStub, [], ['APP_DEBUG' => '1'])->isDebug());
+		static::assertFalse(new Config($this->configLoaderStub, [], [])->isDebug());
+	}
+
+	#[Group('units')]
 	public function testLogLevelIsDebugInDevEnvironment(): void
 	{
 		$config = new Config($this->configLoaderStub, [], ['APP_ENV' => 'dev']);

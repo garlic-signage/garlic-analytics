@@ -62,6 +62,11 @@ class Config
 		return $this->paths[$key] ?? '';
 	}
 
+	public function isDebug(): bool
+	{
+		return $this->getEnv('APP_DEBUG') === 'true';
+	}
+
 	public function getLogLevel(): Level
 	{
 		return match ($this->getEnv('APP_ENV'))

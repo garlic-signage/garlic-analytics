@@ -48,7 +48,7 @@ use Slim\Exception\HttpUnauthorizedException;
  * HttpException keeps its status code, ValidationException becomes 422,
  * anything else becomes 500. Only 5xx responses are logged.
  */
-return function (App $app, LoggerInterface $logger): void
+return function (App $app, LoggerInterface $logger, bool $debug): void
 {
     /**
      * Converts PHP warnings and notices into an ErrorException,
@@ -72,7 +72,7 @@ return function (App $app, LoggerInterface $logger): void
      * Everything thrown inside ends up in $myErrorHandler.
      * Fatal errors (memory limit, max execution time) cannot be caught here.
      */
-    $errorMiddleware = $app->addErrorMiddleware(($_ENV['APP_DEBUG'] ?? 'false') === 'true', true, true, $logger);
+    $errorMiddleware = $app->addErrorMiddleware($debug, true, true, $logger);
 
     /**
      * Turns an exception into a JSON response.

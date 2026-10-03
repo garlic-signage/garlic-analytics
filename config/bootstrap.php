@@ -35,8 +35,17 @@ try
 
     require $systemDir.'/vendor/autoload.php';
     $dotenv = Dotenv\Dotenv::createImmutable($systemDir);
-    /** @var array<string, string> $env */
-    $env = $dotenv->load();
+    $dotenv->load();
+
+    // load() only returns the variables it set itself. Variables that already exist in the real
+    // environment (DDEV, Docker, web server) are skipped and would be missing, so both are merged.
+    // Real environment variables win over .env.
+    $env = [];
+    foreach (array_merge($_ENV, getenv()) as $key => $value)
+    {
+        if (is_string($value))
+            $env[(string) $key] = $value;
+    }
 }
 catch (Throwable $e)
 {
