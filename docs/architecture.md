@@ -58,6 +58,7 @@ CMS -> GET /v1/<module>/... (API) -> displays results, resolves IDs to names and
   - `Framework\Ingest\IngestController` and `IngestService`: base classes. A module extends them (`PlayLogController`, `PlayLogService`) and delivers a validator and a repository through the interfaces `IngestValidatorInterface` and `IngestRepositoryInterface`.
   - `Framework\Validation\BatchValidator`: the checks around the event list (list, limit of events, collected errors as `events.<index>.<field>`, all or nothing) and the common field checks (strings, ISO 8601 time, too old, in the future). The module validator checks the fields of its event type.
   - `Framework\Database\BatchRepository`: base of the repositories. It writes the rows with one `INSERT` and builds the deduplication token from them.
+  - `config/ingest_module.php`: the DI definitions of an ingest module (validator with the limits of its `config_<module>.ini`, repository, service, controller). The file of a module in `config/services/` only passes its four classes to it.
   - `ClickHouseClient` writes a PHP array with string keys as a `Map` value (`{'key':'value'}`).
 - Read endpoints aggregate first (`sum()` with `GROUP BY` on the hourly tables) and paginate the aggregated result.
 - Routes stay central in `config/routes.php`, schema files stay central in `migrations/`.

@@ -19,55 +19,12 @@
 */
 declare(strict_types=1);
 
-use App\Framework\Core\Config\Config;
-use App\Framework\Database\ClickHouseClientInterface;
-use App\Framework\Validation\BatchValidator;
-use App\Framework\Validation\FieldValidator;
 use App\Modules\EventLog\EventLogController;
 use App\Modules\EventLog\EventLogRepository;
 use App\Modules\EventLog\EventLogService;
 use App\Modules\EventLog\EventLogValidator;
-use Psr\Container\ContainerInterface;
 
-$dependencies = [];
+/** @var Closure $define */
+$define = require __DIR__ . '/../ingest_module.php';
 
-$dependencies[EventLogValidator::class] = DI\factory(function (ContainerInterface $container)
-{
-    /** @var Config $config */
-    $config = $container->get(Config::class);
-
-    return new EventLogValidator(new BatchValidator(
-        new FieldValidator(),
-        (int) $config->getConfigValue('max_events', 'eventlog'),
-        (int) $config->getConfigValue('max_age_days', 'eventlog'),
-        (int) $config->getConfigValue('max_future_seconds', 'eventlog')
-    ));
-});
-
-$dependencies[EventLogRepository::class] = DI\factory(function (ContainerInterface $container)
-{
-    /** @var ClickHouseClientInterface $client */
-    $client = $container->get(ClickHouseClientInterface::class);
-
-    return new EventLogRepository($client);
-});
-
-$dependencies[EventLogService::class] = DI\factory(function (ContainerInterface $container)
-{
-    /** @var EventLogValidator $validator */
-    $validator = $container->get(EventLogValidator::class);
-    /** @var EventLogRepository $repository */
-    $repository = $container->get(EventLogRepository::class);
-
-    return new EventLogService($validator, $repository);
-});
-
-$dependencies[EventLogController::class] = DI\factory(function (ContainerInterface $container)
-{
-    /** @var EventLogService $service */
-    $service = $container->get(EventLogService::class);
-
-    return new EventLogController($service);
-});
-
-return $dependencies;
+return $define('eventlog', EventLogController::class, EventLogService::class, EventLogValidator::class, EventLogRepository::class);

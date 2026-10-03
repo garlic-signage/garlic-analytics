@@ -19,55 +19,12 @@
 */
 declare(strict_types=1);
 
-use App\Framework\Core\Config\Config;
-use App\Framework\Database\ClickHouseClientInterface;
-use App\Framework\Validation\BatchValidator;
-use App\Framework\Validation\FieldValidator;
 use App\Modules\PlayLog\PlayLogController;
 use App\Modules\PlayLog\PlayLogRepository;
 use App\Modules\PlayLog\PlayLogService;
 use App\Modules\PlayLog\PlayLogValidator;
-use Psr\Container\ContainerInterface;
 
-$dependencies = [];
+/** @var Closure $define */
+$define = require __DIR__ . '/../ingest_module.php';
 
-$dependencies[PlayLogValidator::class] = DI\factory(function (ContainerInterface $container)
-{
-    /** @var Config $config */
-    $config = $container->get(Config::class);
-
-    return new PlayLogValidator(new BatchValidator(
-        new FieldValidator(),
-        (int) $config->getConfigValue('max_events', 'playlog'),
-        (int) $config->getConfigValue('max_age_days', 'playlog'),
-        (int) $config->getConfigValue('max_future_seconds', 'playlog')
-    ));
-});
-
-$dependencies[PlayLogRepository::class] = DI\factory(function (ContainerInterface $container)
-{
-    /** @var ClickHouseClientInterface $client */
-    $client = $container->get(ClickHouseClientInterface::class);
-
-    return new PlayLogRepository($client);
-});
-
-$dependencies[PlayLogService::class] = DI\factory(function (ContainerInterface $container)
-{
-    /** @var PlayLogValidator $validator */
-    $validator = $container->get(PlayLogValidator::class);
-    /** @var PlayLogRepository $repository */
-    $repository = $container->get(PlayLogRepository::class);
-
-    return new PlayLogService($validator, $repository);
-});
-
-$dependencies[PlayLogController::class] = DI\factory(function (ContainerInterface $container)
-{
-    /** @var PlayLogService $service */
-    $service = $container->get(PlayLogService::class);
-
-    return new PlayLogController($service);
-});
-
-return $dependencies;
+return $define('playlog', PlayLogController::class, PlayLogService::class, PlayLogValidator::class, PlayLogRepository::class);

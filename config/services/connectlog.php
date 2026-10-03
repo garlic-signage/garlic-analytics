@@ -19,55 +19,12 @@
 */
 declare(strict_types=1);
 
-use App\Framework\Core\Config\Config;
-use App\Framework\Database\ClickHouseClientInterface;
-use App\Framework\Validation\BatchValidator;
-use App\Framework\Validation\FieldValidator;
 use App\Modules\ConnectLog\ConnectLogController;
 use App\Modules\ConnectLog\ConnectLogRepository;
 use App\Modules\ConnectLog\ConnectLogService;
 use App\Modules\ConnectLog\ConnectLogValidator;
-use Psr\Container\ContainerInterface;
 
-$dependencies = [];
+/** @var Closure $define */
+$define = require __DIR__ . '/../ingest_module.php';
 
-$dependencies[ConnectLogValidator::class] = DI\factory(function (ContainerInterface $container)
-{
-    /** @var Config $config */
-    $config = $container->get(Config::class);
-
-    return new ConnectLogValidator(new BatchValidator(
-        new FieldValidator(),
-        (int) $config->getConfigValue('max_events', 'connectlog'),
-        (int) $config->getConfigValue('max_age_days', 'connectlog'),
-        (int) $config->getConfigValue('max_future_seconds', 'connectlog')
-    ));
-});
-
-$dependencies[ConnectLogRepository::class] = DI\factory(function (ContainerInterface $container)
-{
-    /** @var ClickHouseClientInterface $client */
-    $client = $container->get(ClickHouseClientInterface::class);
-
-    return new ConnectLogRepository($client);
-});
-
-$dependencies[ConnectLogService::class] = DI\factory(function (ContainerInterface $container)
-{
-    /** @var ConnectLogValidator $validator */
-    $validator = $container->get(ConnectLogValidator::class);
-    /** @var ConnectLogRepository $repository */
-    $repository = $container->get(ConnectLogRepository::class);
-
-    return new ConnectLogService($validator, $repository);
-});
-
-$dependencies[ConnectLogController::class] = DI\factory(function (ContainerInterface $container)
-{
-    /** @var ConnectLogService $service */
-    $service = $container->get(ConnectLogService::class);
-
-    return new ConnectLogController($service);
-});
-
-return $dependencies;
+return $define('connectlog', ConnectLogController::class, ConnectLogService::class, ConnectLogValidator::class, ConnectLogRepository::class);

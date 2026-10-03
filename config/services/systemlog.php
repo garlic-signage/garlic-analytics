@@ -19,55 +19,12 @@
 */
 declare(strict_types=1);
 
-use App\Framework\Core\Config\Config;
-use App\Framework\Database\ClickHouseClientInterface;
-use App\Framework\Validation\BatchValidator;
-use App\Framework\Validation\FieldValidator;
 use App\Modules\SystemLog\SystemLogController;
 use App\Modules\SystemLog\SystemLogRepository;
 use App\Modules\SystemLog\SystemLogService;
 use App\Modules\SystemLog\SystemLogValidator;
-use Psr\Container\ContainerInterface;
 
-$dependencies = [];
+/** @var Closure $define */
+$define = require __DIR__ . '/../ingest_module.php';
 
-$dependencies[SystemLogValidator::class] = DI\factory(function (ContainerInterface $container)
-{
-    /** @var Config $config */
-    $config = $container->get(Config::class);
-
-    return new SystemLogValidator(new BatchValidator(
-        new FieldValidator(),
-        (int) $config->getConfigValue('max_events', 'systemlog'),
-        (int) $config->getConfigValue('max_age_days', 'systemlog'),
-        (int) $config->getConfigValue('max_future_seconds', 'systemlog')
-    ));
-});
-
-$dependencies[SystemLogRepository::class] = DI\factory(function (ContainerInterface $container)
-{
-    /** @var ClickHouseClientInterface $client */
-    $client = $container->get(ClickHouseClientInterface::class);
-
-    return new SystemLogRepository($client);
-});
-
-$dependencies[SystemLogService::class] = DI\factory(function (ContainerInterface $container)
-{
-    /** @var SystemLogValidator $validator */
-    $validator = $container->get(SystemLogValidator::class);
-    /** @var SystemLogRepository $repository */
-    $repository = $container->get(SystemLogRepository::class);
-
-    return new SystemLogService($validator, $repository);
-});
-
-$dependencies[SystemLogController::class] = DI\factory(function (ContainerInterface $container)
-{
-    /** @var SystemLogService $service */
-    $service = $container->get(SystemLogService::class);
-
-    return new SystemLogController($service);
-});
-
-return $dependencies;
+return $define('systemlog', SystemLogController::class, SystemLogService::class, SystemLogValidator::class, SystemLogRepository::class);
