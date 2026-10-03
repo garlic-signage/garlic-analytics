@@ -100,6 +100,8 @@ return function (App $app, LoggerInterface $logger, bool $debug): void
         }
 
         $payload = ['error' => $error];
+        if ($exception instanceof ValidationException)
+            $payload['errors'] = $exception->getErrors();
         if ($displayErrorDetails && $status >= 500)
             $payload['message'] = $exception->getMessage();
 
