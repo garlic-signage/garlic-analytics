@@ -21,10 +21,21 @@ declare(strict_types=1);
 
 namespace App\Framework\Database;
 
+use App\Framework\Exceptions\DatabaseException;
+
 /**
  * Interface representing a client for interacting with a ClickHouse database.
  */
 interface ClickHouseClientInterface
 {
     public function execute(string $sql): void;
+
+    /**
+     * Inserts rows with one INSERT statement.
+     *
+     * @param list<list<int|string>> $rows    values in the order of $columns
+     * @param list<string>           $columns
+     * @throws DatabaseException
+     */
+    public function insert(string $table, array $rows, array $columns): void;
 }

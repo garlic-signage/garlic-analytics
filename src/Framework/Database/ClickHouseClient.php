@@ -22,7 +22,9 @@ declare(strict_types=1);
 
 namespace App\Framework\Database;
 
+use App\Framework\Exceptions\DatabaseException;
 use ClickHouseDB\Client;
+use ClickHouseDB\Exception\ClickHouseException;
 
 readonly class ClickHouseClient implements ClickHouseClientInterface
 {
@@ -36,5 +38,17 @@ readonly class ClickHouseClient implements ClickHouseClientInterface
     public function execute(string $sql): void
     {
         $this->client->write($sql);
+    }
+
+    public function insert(string $table, array $rows, array $columns): void
+    {
+        try
+        {
+            $this->client->insert($table, $rows, $columns);
+        }
+        catch (ClickHouseException $e)
+        {
+            throw new DatabaseException('Insert into ' . $table . ' failed: ' . $e->getMessage(), 0, $e);
+        }
     }
 }
