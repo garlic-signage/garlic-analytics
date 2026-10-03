@@ -13,7 +13,7 @@ services:
       HTTP_EXPOSE: "8124:8123"
       HTTPS_EXPOSE: "8123:8123"
     volumes:
-      - clickhouse:/var/lib/clickhouse
+      - "${DDEV_APPROOT}/var/clickhouse:/var/lib/clickhouse"
       - ../schema:/docker-entrypoint-initdb.d
       - ".:/mnt/ddev_config"
     ulimits:

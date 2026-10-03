@@ -22,7 +22,7 @@ declare(strict_types=1);
 namespace App\Modules\Auth;
 
 /**
- * A client authenticated by its API key, e.g. a CMS or the collector.
+ * A client authenticated by its API key, e.g., a CMS or the collector.
  */
 readonly class ApiClient
 {

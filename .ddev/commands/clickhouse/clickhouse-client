@@ -1,4 +1,0 @@
-#!/bin/bash
-## Description: ClickHouse-Client im Container starten
-## Usage: clickhouse-client [args]
-clickhouse-client --user analytics --password analytics --database analytics "$@"
