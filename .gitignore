@@ -12,6 +12,7 @@
 /.env.local
 /.homeadditions
 /.importdb*
+CLAUDE.md
 /.webimageBuild
 /apache/apache-site.conf
 /commands/.gitattributes
