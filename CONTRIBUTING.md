@@ -45,6 +45,8 @@ vendor/bin/phpstan analyse
 vendor/bin/phpunit
 ```
 
+A third workflow runs the integration tests against a real ClickHouse, see [Tests](#tests).
+
 - PHPStan runs at level `max` with strict rules and covers `src`, `tests`, `config` and `public`.
 - PHPUnit fails on warnings, risky tests and unexpected output.
 
@@ -61,6 +63,13 @@ vendor/bin/phpunit tests/Framework/Core/CryptTest.php
 - Every test method needs the attribute `#[Group('units')]`. PHPUnit only runs this group, a test without it is skipped silently.
 - Use a stub when the test only needs return values. Use a mock only when the call itself is what you test, e.g. that a configuration file is loaded only once.
 - Code that talks to ClickHouse depends on `ClickHouseClientInterface`, so tests can replace it without a running database.
+- Tests against a real ClickHouse are in `tests/Integration/`. They have the group `integration` on the class and run with their own configuration, which is not part of `vendor/bin/phpunit`:
+
+  ```bash
+  vendor/bin/phpunit -c phpunit.integration.xml     # or: composer test:integration
+  ```
+
+  They use the `CLICKHOUSE_HOST`, `_PORT`, `_USER` and `_PASSWORD` of the environment (in DDEV they are set). Every test class creates its own database `analytics_test` (`CLICKHOUSE_TEST_DATABASE`) with the real migrations and drops it afterwards, the database of the application stays untouched. The user needs the right to create and drop databases. If ClickHouse is not reachable the tests fail, they are not skipped.
 - Coverage is measured locally when needed. There is no threshold.
 
 ## Code style
