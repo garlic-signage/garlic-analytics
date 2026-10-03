@@ -40,7 +40,6 @@
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpstan/phpstan-phpunit": "^2.0",
         "phpstan/extension-installer": "^1.4",
-        "phpmd/phpmd": "^2.15",
         "deptrac/deptrac": "^4.7"
     },
     "scripts": {
