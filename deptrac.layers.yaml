@@ -1,0 +1,133 @@
+# Architecture rules by role, found by class name:
+#
+#   Command  -> Service / Store / Collector
+#   Controller / Middleware -> Service / Store -> Repository / Validator -> Model
+#
+# - A controller only talks to its service, never to a repository or validator.
+# - Validators, repositories and stores know nothing about the layers above them.
+# - Models (events, value objects, enums) depend on nothing.
+# - Everything may use Framework (config, exceptions, database interface, ...), Framework uses no module.
+# - The Collector (src/Collector) is one block here, its own structure is not checked. It knows no module
+#   and not the Framework. Only commands use it.
+# - Symfony Console is only used by commands, Slim only by controllers and middleware.
+#
+# This file does not look at the borders between the areas, that is deptrac.yaml.
+#
+#   ddev exec vendor/bin/deptrac analyse -c deptrac.layers.yaml
+deptrac:
+  paths:
+    - ./src
+
+  layers:
+    - name: Command
+      collectors:
+        - type: classLike
+          value: ^App\\.*(Command|\\Commands\\.*)$
+
+    - name: Controller
+      collectors:
+        - type: classLike
+          value: ^App\\Modules\\.*Controller$
+
+    - name: Middleware
+      collectors:
+        - type: classLike
+          value: ^App\\Modules\\.*Middleware$
+
+    - name: Service
+      collectors:
+        - type: classLike
+          value: ^App\\Modules\\.*Service$
+
+    - name: Validator
+      collectors:
+        - type: classLike
+          value: ^App\\Modules\\.*Validator$
+
+    - name: Repository
+      collectors:
+        - type: classLike
+          value: ^App\\Modules\\.*Repository$
+
+    - name: Store
+      collectors:
+        - type: classLike
+          value: ^App\\Modules\\.*Store(Interface)?$
+
+    - name: Model
+      collectors:
+        - type: bool
+          must:
+            - type: classLike
+              value: ^App\\Modules\\.*
+          must_not:
+            - type: classLike
+              value: ^App\\Modules\\.*(Controller|Middleware|Service|Validator|Repository|Store|StoreInterface)$
+            - type: classLike
+              value: ^App\\.*(Command|\\Commands\\.*)$
+
+    - name: Framework
+      collectors:
+        - type: bool
+          must:
+            - type: classLike
+              value: ^App\\Framework\\.*
+          must_not:
+            - type: classLike
+              value: ^App\\.*(Command|\\Commands\\.*)$
+
+    - name: Collector
+      collectors:
+        - type: bool
+          must:
+            - type: classLike
+              value: ^App\\Collector\\.*
+          must_not:
+            - type: classLike
+              value: ^App\\.*(Command|\\Commands\\.*)$
+
+    - name: SymfonyConsole
+      collectors:
+        - type: classLike
+          value: ^Symfony\\Component\\Console\\.*
+
+    - name: Slim
+      collectors:
+        - type: classLike
+          value: ^Slim\\.*
+
+  ruleset:
+    Command:
+      - Service
+      - Store
+      - Model
+      - Framework
+      - Collector
+      - SymfonyConsole
+    Controller:
+      - Service
+      - Model
+      - Framework
+      - Slim
+    Middleware:
+      - Store
+      - Model
+      - Framework
+      - Slim
+    Service:
+      - Validator
+      - Repository
+      - Model
+      - Framework
+    Validator:
+      - Model
+      - Framework
+    Repository:
+      - Model
+      - Framework
+    Store:
+      - Model
+      - Framework
+    Model: ~
+    Framework: ~
+    Collector: ~

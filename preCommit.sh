@@ -7,3 +7,5 @@ XDEBUG_MODE=coverage
 php vendor/bin/phpunit --coverage-html public/clover/ --coverage-clover  public/clover/clover.xml
 vendor/bin/phpstan analyze
 
+ ddev exec vendor/bin/deptrac analyse -c deptrac.yaml
+ ddev exec vendor/bin/deptrac analyse -c deptrac.layers.yaml

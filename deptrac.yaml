@@ -1,0 +1,70 @@
+# Architecture rules by area: who may use whom.
+#
+# - Framework and the modules never use the Collector, the modules never use each other.
+# - The Collector knows no other part of the application, so it can move into its own project
+#   (it only talks to the API over HTTP).
+# - The ClickHouse driver is only used in Framework\Database, everything else works with
+#   ClickHouseClientInterface. Guzzle is only used by the Collector.
+#
+# A class may only be in one layer per file, so the roles inside a module (controller, service,
+# repository, ...) are checked in deptrac.layers.yaml.
+#
+#   ddev exec vendor/bin/deptrac analyse -c deptrac.yaml
+#   ddev exec vendor/bin/deptrac analyse -c deptrac.layers.yaml
+deptrac:
+  paths:
+    - ./src
+
+  layers:
+    - name: Database
+      collectors:
+        - type: classLike
+          value: ^App\\Framework\\Database\\.*
+
+    - name: Framework
+      collectors:
+        - type: bool
+          must:
+            - type: classLike
+              value: ^App\\Framework\\.*
+          must_not:
+            - type: classLike
+              value: ^App\\Framework\\Database\\.*
+
+    - name: Auth
+      collectors:
+        - type: classLike
+          value: ^App\\Modules\\Auth\\.*
+
+    - name: PlayLog
+      collectors:
+        - type: classLike
+          value: ^App\\Modules\\PlayLog\\.*
+
+    - name: Collector
+      collectors:
+        - type: classLike
+          value: ^App\\Collector\\.*
+
+    - name: ClickHouseDriver
+      collectors:
+        - type: classLike
+          value: ^ClickHouseDB\\.*
+
+    - name: Guzzle
+      collectors:
+        - type: classLike
+          value: ^GuzzleHttp\\.*
+
+  ruleset:
+    Framework: ~
+    Database:
+      - Framework
+      - ClickHouseDriver
+    Auth:
+      - Framework
+    PlayLog:
+      - Framework
+      - Database
+    Collector:
+      - Guzzle

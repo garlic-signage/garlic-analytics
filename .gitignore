@@ -37,6 +37,7 @@
 .idea/
 /vendor/
 /.phpunit.result.cache
+/.deptrac.cache
 /PROJECT-de.md
 /var/
 /public/clover/
