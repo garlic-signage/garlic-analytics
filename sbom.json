@@ -1,0 +1,2125 @@
+{
+    "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+    "bomFormat": "CycloneDX",
+    "specVersion": "1.5",
+    "serialNumber": "urn:uuid:e26d3c5d-b990-44c7-af7a-3c3502a0f4f6",
+    "version": 1,
+    "metadata": {
+        "timestamp": "2026-10-04T11:38:32Z",
+        "tools": [
+            {
+                "name": "composer",
+                "version": "2.10.3"
+            },
+            {
+                "vendor": "cyclonedx",
+                "name": "cyclonedx-php-composer",
+                "version": "v6.2.0",
+                "externalReferences": [
+                    {
+                        "type": "distribution",
+                        "url": "https://api.github.com/repos/CycloneDX/cyclonedx-php-composer/zipball/934440a5ef7c3c3cdb58c3c3d389d412630ccbf6",
+                        "comment": "dist reference: 934440a5ef7c3c3cdb58c3c3d389d412630ccbf6"
+                    },
+                    {
+                        "type": "vcs",
+                        "url": "https://github.com/CycloneDX/cyclonedx-php-composer.git",
+                        "comment": "source reference: 934440a5ef7c3c3cdb58c3c3d389d412630ccbf6"
+                    },
+                    {
+                        "type": "website",
+                        "url": "https://github.com/CycloneDX/cyclonedx-php-composer/#readme",
+                        "comment": "as detected from Composer manifest 'homepage'"
+                    },
+                    {
+                        "type": "issue-tracker",
+                        "url": "https://github.com/CycloneDX/cyclonedx-php-composer/issues",
+                        "comment": "as detected from Composer manifest 'support.issues'"
+                    },
+                    {
+                        "type": "vcs",
+                        "url": "https://github.com/CycloneDX/cyclonedx-php-composer/",
+                        "comment": "as detected from Composer manifest 'support.source'"
+                    }
+                ]
+            },
+            {
+                "vendor": "cyclonedx",
+                "name": "cyclonedx-library",
+                "version": "v4.2.0",
+                "externalReferences": [
+                    {
+                        "type": "distribution",
+                        "url": "https://api.github.com/repos/CycloneDX/cyclonedx-php-library/zipball/a99d940fad1b091fe48f41b6ef1b5960bbb0fbd4",
+                        "comment": "dist reference: a99d940fad1b091fe48f41b6ef1b5960bbb0fbd4"
+                    },
+                    {
+                        "type": "vcs",
+                        "url": "https://github.com/CycloneDX/cyclonedx-php-library.git",
+                        "comment": "source reference: a99d940fad1b091fe48f41b6ef1b5960bbb0fbd4"
+                    },
+                    {
+                        "type": "website",
+                        "url": "https://github.com/CycloneDX/cyclonedx-php-library/#readme",
+                        "comment": "as detected from Composer manifest 'homepage'"
+                    },
+                    {
+                        "type": "documentation",
+                        "url": "https://cyclonedx-php-library.readthedocs.io",
+                        "comment": "as detected from Composer manifest 'support.docs'"
+                    },
+                    {
+                        "type": "issue-tracker",
+                        "url": "https://github.com/CycloneDX/cyclonedx-php-library/issues",
+                        "comment": "as detected from Composer manifest 'support.issues'"
+                    },
+                    {
+                        "type": "vcs",
+                        "url": "https://github.com/CycloneDX/cyclonedx-php-library/",
+                        "comment": "as detected from Composer manifest 'support.source'"
+                    }
+                ]
+            }
+        ],
+        "component": {
+            "bom-ref": "garlicsignage/garlic-analytics-dev-main",
+            "type": "application",
+            "name": "garlic-analytics",
+            "version": "dev-main",
+            "group": "garlicsignage",
+            "description": "Self-hosted analytics service for digital signage players",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "AGPL-3.0-or-later"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/garlicsignage/garlic-analytics@dev-main",
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "307473c4a00300b946810da10ccaba91e4b5e232"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "307473c4a00300b946810da10ccaba91e4b5e232"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "project"
+                }
+            ]
+        }
+    },
+    "components": [
+        {
+            "bom-ref": "fig/http-message-util-1.1.5.0",
+            "type": "library",
+            "name": "http-message-util",
+            "version": "1.1.5",
+            "group": "fig",
+            "description": "Utility classes and constants for use with PSR-7 (psr/http-message)",
+            "author": "PHP-FIG",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/fig/http-message-util@1.1.5",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/php-fig/http-message-util/zipball/9d94dc0154230ac39e5bf89398b324a86f63f765",
+                    "comment": "dist reference: 9d94dc0154230ac39e5bf89398b324a86f63f765"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/php-fig/http-message-util.git",
+                    "comment": "source reference: 9d94dc0154230ac39e5bf89398b324a86f63f765"
+                },
+                {
+                    "type": "issue-tracker",
+                    "url": "https://github.com/php-fig/http-message-util/issues",
+                    "comment": "as detected from Composer manifest 'support.issues'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/php-fig/http-message-util/tree/1.1.5",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "9d94dc0154230ac39e5bf89398b324a86f63f765"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "9d94dc0154230ac39e5bf89398b324a86f63f765"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "graham-campbell/result-type-1.2.0.0",
+            "type": "library",
+            "name": "result-type",
+            "version": "v1.2.0",
+            "group": "graham-campbell",
+            "description": "An Implementation Of The Result Type",
+            "author": "Graham Campbell",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/graham-campbell/result-type@v1.2.0",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/GrahamCampbell/Result-Type/zipball/adccca3324eece92ca35463648c12b9e6293c05b",
+                    "comment": "dist reference: adccca3324eece92ca35463648c12b9e6293c05b"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/GrahamCampbell/Result-Type.git",
+                    "comment": "source reference: adccca3324eece92ca35463648c12b9e6293c05b"
+                },
+                {
+                    "type": "issue-tracker",
+                    "url": "https://github.com/GrahamCampbell/Result-Type/issues",
+                    "comment": "as detected from Composer manifest 'support.issues'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/GrahamCampbell/Result-Type/tree/v1.2.0",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "adccca3324eece92ca35463648c12b9e6293c05b"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "adccca3324eece92ca35463648c12b9e6293c05b"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "guzzlehttp/guzzle-7.15.5.0",
+            "type": "library",
+            "name": "guzzle",
+            "version": "7.15.5",
+            "group": "guzzlehttp",
+            "description": "Guzzle is a PHP HTTP client library",
+            "author": "Graham Campbell, Michael Dowling, Jeremy Lindblom, George Mponos, Tobias Nyholm, M\u00e1rk S\u00e1gi-Kaz\u00e1r, Tobias Schultze",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/guzzlehttp/guzzle@7.15.5",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/guzzle/guzzle/zipball/ee80339fd9177ba44c49cdb653ff02a4d1106b9a",
+                    "comment": "dist reference: ee80339fd9177ba44c49cdb653ff02a4d1106b9a"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/guzzle/guzzle.git",
+                    "comment": "source reference: ee80339fd9177ba44c49cdb653ff02a4d1106b9a"
+                },
+                {
+                    "type": "issue-tracker",
+                    "url": "https://github.com/guzzle/guzzle/issues",
+                    "comment": "as detected from Composer manifest 'support.issues'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/guzzle/guzzle/tree/7.15.5",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "ee80339fd9177ba44c49cdb653ff02a4d1106b9a"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "ee80339fd9177ba44c49cdb653ff02a4d1106b9a"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "guzzlehttp/promises-2.5.3.0",
+            "type": "library",
+            "name": "promises",
+            "version": "2.5.3",
+            "group": "guzzlehttp",
+            "description": "Guzzle promises library",
+            "author": "Graham Campbell, Michael Dowling, Tobias Nyholm, Tobias Schultze",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/guzzlehttp/promises@2.5.3",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/guzzle/promises/zipball/cde49999552d185d64715fe9c1f77a2aadd2f9f1",
+                    "comment": "dist reference: cde49999552d185d64715fe9c1f77a2aadd2f9f1"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/guzzle/promises.git",
+                    "comment": "source reference: cde49999552d185d64715fe9c1f77a2aadd2f9f1"
+                },
+                {
+                    "type": "issue-tracker",
+                    "url": "https://github.com/guzzle/promises/issues",
+                    "comment": "as detected from Composer manifest 'support.issues'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/guzzle/promises/tree/2.5.3",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "cde49999552d185d64715fe9c1f77a2aadd2f9f1"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "cde49999552d185d64715fe9c1f77a2aadd2f9f1"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "guzzlehttp/psr7-2.13.1.0",
+            "type": "library",
+            "name": "psr7",
+            "version": "2.13.1",
+            "group": "guzzlehttp",
+            "description": "PSR-7 message implementation that also provides common utility methods",
+            "author": "Graham Campbell, Michael Dowling, George Mponos, Tobias Nyholm, M\u00e1rk S\u00e1gi-Kaz\u00e1r, Tobias Schultze, M\u00e1rk S\u00e1gi-Kaz\u00e1r",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/guzzlehttp/psr7@2.13.1",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/guzzle/psr7/zipball/95e7828100de18b4e269fb1703be530082d5166d",
+                    "comment": "dist reference: 95e7828100de18b4e269fb1703be530082d5166d"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/guzzle/psr7.git",
+                    "comment": "source reference: 95e7828100de18b4e269fb1703be530082d5166d"
+                },
+                {
+                    "type": "issue-tracker",
+                    "url": "https://github.com/guzzle/psr7/issues",
+                    "comment": "as detected from Composer manifest 'support.issues'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/guzzle/psr7/tree/2.13.1",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "95e7828100de18b4e269fb1703be530082d5166d"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "95e7828100de18b4e269fb1703be530082d5166d"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "laravel/serializable-closure-2.1.0.0",
+            "type": "library",
+            "name": "serializable-closure",
+            "version": "v2.1.0",
+            "group": "laravel",
+            "description": "Laravel Serializable Closure provides an easy and secure way to serialize closures in PHP.",
+            "author": "Taylor Otwell, Nuno Maduro",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/laravel/serializable-closure@v2.1.0",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/laravel/serializable-closure/zipball/2d5869a838bbcf37e0d8b0568fc41914e81374b5",
+                    "comment": "dist reference: 2d5869a838bbcf37e0d8b0568fc41914e81374b5"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/laravel/serializable-closure.git",
+                    "comment": "source reference: 2d5869a838bbcf37e0d8b0568fc41914e81374b5"
+                },
+                {
+                    "type": "issue-tracker",
+                    "url": "https://github.com/laravel/serializable-closure/issues",
+                    "comment": "as detected from Composer manifest 'support.issues'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/laravel/serializable-closure",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "2d5869a838bbcf37e0d8b0568fc41914e81374b5"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "2d5869a838bbcf37e0d8b0568fc41914e81374b5"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "monolog/monolog-3.12.0.0",
+            "type": "library",
+            "name": "monolog",
+            "version": "3.12.0",
+            "group": "monolog",
+            "description": "Sends your logs to files, sockets, inboxes, databases and various web services",
+            "author": "Jordi Boggiano",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/monolog/monolog@3.12.0",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/Seldaek/monolog/zipball/72c534fc0ab181ef52d92a68382318631e301608",
+                    "comment": "dist reference: 72c534fc0ab181ef52d92a68382318631e301608"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/Seldaek/monolog.git",
+                    "comment": "source reference: 72c534fc0ab181ef52d92a68382318631e301608"
+                },
+                {
+                    "type": "website",
+                    "url": "https://github.com/Seldaek/monolog",
+                    "comment": "as detected from Composer manifest 'homepage'"
+                },
+                {
+                    "type": "issue-tracker",
+                    "url": "https://github.com/Seldaek/monolog/issues",
+                    "comment": "as detected from Composer manifest 'support.issues'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/Seldaek/monolog/tree/3.12.0",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "72c534fc0ab181ef52d92a68382318631e301608"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "72c534fc0ab181ef52d92a68382318631e301608"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "nikic/fast-route-1.3.1.0",
+            "type": "library",
+            "name": "fast-route",
+            "version": "1.3.1",
+            "group": "nikic",
+            "description": "Fast request router for PHP",
+            "author": "Nikita Popov",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "BSD-3-Clause"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/nikic/fast-route@1.3.1",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/nikic/FastRoute/zipball/7476684f39bb9124b3be69ed3d84b66723920298",
+                    "comment": "dist reference: 7476684f39bb9124b3be69ed3d84b66723920298"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/nikic/FastRoute.git",
+                    "comment": "source reference: 7476684f39bb9124b3be69ed3d84b66723920298"
+                },
+                {
+                    "type": "issue-tracker",
+                    "url": "https://github.com/nikic/FastRoute/issues",
+                    "comment": "as detected from Composer manifest 'support.issues'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/nikic/FastRoute/tree/1.3.1",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "7476684f39bb9124b3be69ed3d84b66723920298"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "7476684f39bb9124b3be69ed3d84b66723920298"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "php-di/invoker-2.3.7.0",
+            "type": "library",
+            "name": "invoker",
+            "version": "2.3.7",
+            "group": "php-di",
+            "description": "Generic and extensible callable invoker",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/php-di/invoker@2.3.7",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/PHP-DI/Invoker/zipball/3c1ddfdef181431fbc4be83378f6d036d59e81e1",
+                    "comment": "dist reference: 3c1ddfdef181431fbc4be83378f6d036d59e81e1"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/PHP-DI/Invoker.git",
+                    "comment": "source reference: 3c1ddfdef181431fbc4be83378f6d036d59e81e1"
+                },
+                {
+                    "type": "website",
+                    "url": "https://github.com/PHP-DI/Invoker",
+                    "comment": "as detected from Composer manifest 'homepage'"
+                },
+                {
+                    "type": "issue-tracker",
+                    "url": "https://github.com/PHP-DI/Invoker/issues",
+                    "comment": "as detected from Composer manifest 'support.issues'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/PHP-DI/Invoker/tree/2.3.7",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "3c1ddfdef181431fbc4be83378f6d036d59e81e1"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "3c1ddfdef181431fbc4be83378f6d036d59e81e1"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "php-di/php-di-7.1.1.0",
+            "type": "library",
+            "name": "php-di",
+            "version": "7.1.1",
+            "group": "php-di",
+            "description": "The dependency injection container for humans",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/php-di/php-di@7.1.1",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/PHP-DI/PHP-DI/zipball/f88054cc052e40dbe7b383c8817c19442d480352",
+                    "comment": "dist reference: f88054cc052e40dbe7b383c8817c19442d480352"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/PHP-DI/PHP-DI.git",
+                    "comment": "source reference: f88054cc052e40dbe7b383c8817c19442d480352"
+                },
+                {
+                    "type": "website",
+                    "url": "https://php-di.org/",
+                    "comment": "as detected from Composer manifest 'homepage'"
+                },
+                {
+                    "type": "issue-tracker",
+                    "url": "https://github.com/PHP-DI/PHP-DI/issues",
+                    "comment": "as detected from Composer manifest 'support.issues'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/PHP-DI/PHP-DI/tree/7.1.1",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "f88054cc052e40dbe7b383c8817c19442d480352"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "f88054cc052e40dbe7b383c8817c19442d480352"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "phpoption/phpoption-1.10.0.0",
+            "type": "library",
+            "name": "phpoption",
+            "version": "1.10.0",
+            "group": "phpoption",
+            "description": "Option Type for PHP",
+            "author": "Johannes M. Schmitt, Graham Campbell",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "Apache-2.0"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/phpoption/phpoption@1.10.0",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/schmittjoh/php-option/zipball/67b192b6a42ec03944b972d6e633ddec78ad2c6d",
+                    "comment": "dist reference: 67b192b6a42ec03944b972d6e633ddec78ad2c6d"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/schmittjoh/php-option.git",
+                    "comment": "source reference: 67b192b6a42ec03944b972d6e633ddec78ad2c6d"
+                },
+                {
+                    "type": "issue-tracker",
+                    "url": "https://github.com/schmittjoh/php-option/issues",
+                    "comment": "as detected from Composer manifest 'support.issues'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/schmittjoh/php-option/tree/1.10.0",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "67b192b6a42ec03944b972d6e633ddec78ad2c6d"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "67b192b6a42ec03944b972d6e633ddec78ad2c6d"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "psr/container-2.0.2.0",
+            "type": "library",
+            "name": "container",
+            "version": "2.0.2",
+            "group": "psr",
+            "description": "Common Container Interface (PHP FIG PSR-11)",
+            "author": "PHP-FIG",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/psr/container@2.0.2",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/php-fig/container/zipball/c71ecc56dfe541dbd90c5360474fbc405f8d5963",
+                    "comment": "dist reference: c71ecc56dfe541dbd90c5360474fbc405f8d5963"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/php-fig/container.git",
+                    "comment": "source reference: c71ecc56dfe541dbd90c5360474fbc405f8d5963"
+                },
+                {
+                    "type": "website",
+                    "url": "https://github.com/php-fig/container",
+                    "comment": "as detected from Composer manifest 'homepage'"
+                },
+                {
+                    "type": "issue-tracker",
+                    "url": "https://github.com/php-fig/container/issues",
+                    "comment": "as detected from Composer manifest 'support.issues'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/php-fig/container/tree/2.0.2",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "c71ecc56dfe541dbd90c5360474fbc405f8d5963"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "c71ecc56dfe541dbd90c5360474fbc405f8d5963"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "psr/http-client-1.0.3.0",
+            "type": "library",
+            "name": "http-client",
+            "version": "1.0.3",
+            "group": "psr",
+            "description": "Common interface for HTTP clients",
+            "author": "PHP-FIG",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/psr/http-client@1.0.3",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/php-fig/http-client/zipball/bb5906edc1c324c9a05aa0873d40117941e5fa90",
+                    "comment": "dist reference: bb5906edc1c324c9a05aa0873d40117941e5fa90"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/php-fig/http-client.git",
+                    "comment": "source reference: bb5906edc1c324c9a05aa0873d40117941e5fa90"
+                },
+                {
+                    "type": "website",
+                    "url": "https://github.com/php-fig/http-client",
+                    "comment": "as detected from Composer manifest 'homepage'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/php-fig/http-client",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "bb5906edc1c324c9a05aa0873d40117941e5fa90"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "bb5906edc1c324c9a05aa0873d40117941e5fa90"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "psr/http-factory-1.1.0.0",
+            "type": "library",
+            "name": "http-factory",
+            "version": "1.1.0",
+            "group": "psr",
+            "description": "PSR-17: Common interfaces for PSR-7 HTTP message factories",
+            "author": "PHP-FIG",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/psr/http-factory@1.1.0",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/php-fig/http-factory/zipball/2b4765fddfe3b508ac62f829e852b1501d3f6e8a",
+                    "comment": "dist reference: 2b4765fddfe3b508ac62f829e852b1501d3f6e8a"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/php-fig/http-factory.git",
+                    "comment": "source reference: 2b4765fddfe3b508ac62f829e852b1501d3f6e8a"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/php-fig/http-factory",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "2b4765fddfe3b508ac62f829e852b1501d3f6e8a"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "2b4765fddfe3b508ac62f829e852b1501d3f6e8a"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "psr/http-message-2.0.0.0",
+            "type": "library",
+            "name": "http-message",
+            "version": "2.0",
+            "group": "psr",
+            "description": "Common interface for HTTP messages",
+            "author": "PHP-FIG",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/psr/http-message@2.0",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/php-fig/http-message/zipball/402d35bcb92c70c026d1a6a9883f06b2ead23d71",
+                    "comment": "dist reference: 402d35bcb92c70c026d1a6a9883f06b2ead23d71"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/php-fig/http-message.git",
+                    "comment": "source reference: 402d35bcb92c70c026d1a6a9883f06b2ead23d71"
+                },
+                {
+                    "type": "website",
+                    "url": "https://github.com/php-fig/http-message",
+                    "comment": "as detected from Composer manifest 'homepage'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/php-fig/http-message/tree/2.0",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "402d35bcb92c70c026d1a6a9883f06b2ead23d71"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "402d35bcb92c70c026d1a6a9883f06b2ead23d71"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "psr/http-server-handler-1.0.2.0",
+            "type": "library",
+            "name": "http-server-handler",
+            "version": "1.0.2",
+            "group": "psr",
+            "description": "Common interface for HTTP server-side request handler",
+            "author": "PHP-FIG",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/psr/http-server-handler@1.0.2",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/php-fig/http-server-handler/zipball/84c4fb66179be4caaf8e97bd239203245302e7d4",
+                    "comment": "dist reference: 84c4fb66179be4caaf8e97bd239203245302e7d4"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/php-fig/http-server-handler.git",
+                    "comment": "source reference: 84c4fb66179be4caaf8e97bd239203245302e7d4"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/php-fig/http-server-handler/tree/1.0.2",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "84c4fb66179be4caaf8e97bd239203245302e7d4"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "84c4fb66179be4caaf8e97bd239203245302e7d4"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "psr/http-server-middleware-1.0.2.0",
+            "type": "library",
+            "name": "http-server-middleware",
+            "version": "1.0.2",
+            "group": "psr",
+            "description": "Common interface for HTTP server-side middleware",
+            "author": "PHP-FIG",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/psr/http-server-middleware@1.0.2",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/php-fig/http-server-middleware/zipball/c1481f747daaa6a0782775cd6a8c26a1bf4a3829",
+                    "comment": "dist reference: c1481f747daaa6a0782775cd6a8c26a1bf4a3829"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/php-fig/http-server-middleware.git",
+                    "comment": "source reference: c1481f747daaa6a0782775cd6a8c26a1bf4a3829"
+                },
+                {
+                    "type": "issue-tracker",
+                    "url": "https://github.com/php-fig/http-server-middleware/issues",
+                    "comment": "as detected from Composer manifest 'support.issues'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/php-fig/http-server-middleware/tree/1.0.2",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "c1481f747daaa6a0782775cd6a8c26a1bf4a3829"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "c1481f747daaa6a0782775cd6a8c26a1bf4a3829"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "psr/log-3.0.2.0",
+            "type": "library",
+            "name": "log",
+            "version": "3.0.2",
+            "group": "psr",
+            "description": "Common interface for logging libraries",
+            "author": "PHP-FIG",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/psr/log@3.0.2",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/php-fig/log/zipball/f16e1d5863e37f8d8c2a01719f5b34baa2b714d3",
+                    "comment": "dist reference: f16e1d5863e37f8d8c2a01719f5b34baa2b714d3"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/php-fig/log.git",
+                    "comment": "source reference: f16e1d5863e37f8d8c2a01719f5b34baa2b714d3"
+                },
+                {
+                    "type": "website",
+                    "url": "https://github.com/php-fig/log",
+                    "comment": "as detected from Composer manifest 'homepage'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/php-fig/log/tree/3.0.2",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "f16e1d5863e37f8d8c2a01719f5b34baa2b714d3"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "f16e1d5863e37f8d8c2a01719f5b34baa2b714d3"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "ralouphie/getallheaders-3.0.3.0",
+            "type": "library",
+            "name": "getallheaders",
+            "version": "3.0.3",
+            "group": "ralouphie",
+            "description": "A polyfill for getallheaders.",
+            "author": "Ralph Khattar",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/ralouphie/getallheaders@3.0.3",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/ralouphie/getallheaders/zipball/120b605dfeb996808c31b6477290a714d356e822",
+                    "comment": "dist reference: 120b605dfeb996808c31b6477290a714d356e822"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/ralouphie/getallheaders.git",
+                    "comment": "source reference: 120b605dfeb996808c31b6477290a714d356e822"
+                },
+                {
+                    "type": "issue-tracker",
+                    "url": "https://github.com/ralouphie/getallheaders/issues",
+                    "comment": "as detected from Composer manifest 'support.issues'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/ralouphie/getallheaders/tree/develop",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "120b605dfeb996808c31b6477290a714d356e822"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "120b605dfeb996808c31b6477290a714d356e822"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "slim/http-1.4.0.0",
+            "type": "library",
+            "name": "http",
+            "version": "1.4.0",
+            "group": "slim",
+            "description": "Slim PSR-7 Object Decorators",
+            "author": "Josh Lockhart, Andrew Smith, Rob Allen, Pierre Berube",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/slim/http@1.4.0",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/slimphp/Slim-Http/zipball/a8def7b8e9eabd0cdc21654ad4a82606942e066a",
+                    "comment": "dist reference: a8def7b8e9eabd0cdc21654ad4a82606942e066a"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/slimphp/Slim-Http.git",
+                    "comment": "source reference: a8def7b8e9eabd0cdc21654ad4a82606942e066a"
+                },
+                {
+                    "type": "website",
+                    "url": "http://slimframework.com",
+                    "comment": "as detected from Composer manifest 'homepage'"
+                },
+                {
+                    "type": "issue-tracker",
+                    "url": "https://github.com/slimphp/Slim-Http/issues",
+                    "comment": "as detected from Composer manifest 'support.issues'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/slimphp/Slim-Http/tree/1.4.0",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "a8def7b8e9eabd0cdc21654ad4a82606942e066a"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "a8def7b8e9eabd0cdc21654ad4a82606942e066a"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "slim/psr7-1.8.0.0",
+            "type": "library",
+            "name": "psr7",
+            "version": "1.8.0",
+            "group": "slim",
+            "description": "Strict PSR-7 implementation",
+            "author": "Josh Lockhart, Andrew Smith, Rob Allen, Pierre Berube",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/slim/psr7@1.8.0",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/slimphp/Slim-Psr7/zipball/76e7e3b1cdfd583e9035c4c966c08e01e45ce959",
+                    "comment": "dist reference: 76e7e3b1cdfd583e9035c4c966c08e01e45ce959"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/slimphp/Slim-Psr7.git",
+                    "comment": "source reference: 76e7e3b1cdfd583e9035c4c966c08e01e45ce959"
+                },
+                {
+                    "type": "website",
+                    "url": "https://www.slimframework.com",
+                    "comment": "as detected from Composer manifest 'homepage'"
+                },
+                {
+                    "type": "issue-tracker",
+                    "url": "https://github.com/slimphp/Slim-Psr7/issues",
+                    "comment": "as detected from Composer manifest 'support.issues'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/slimphp/Slim-Psr7/tree/1.8.0",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "76e7e3b1cdfd583e9035c4c966c08e01e45ce959"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "76e7e3b1cdfd583e9035c4c966c08e01e45ce959"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "slim/slim-4.15.3.0",
+            "type": "library",
+            "name": "slim",
+            "version": "4.15.3",
+            "group": "slim",
+            "description": "Slim is a PHP micro framework that helps you quickly write simple yet powerful web applications and APIs",
+            "author": "Josh Lockhart, Andrew Smith, Rob Allen, Pierre Berube, Gabriel Manricks",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/slim/slim@4.15.3",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/slimphp/Slim/zipball/3675bf6baac66b07032575b7bef4200b60b7974b",
+                    "comment": "dist reference: 3675bf6baac66b07032575b7bef4200b60b7974b"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/slimphp/Slim.git",
+                    "comment": "source reference: 3675bf6baac66b07032575b7bef4200b60b7974b"
+                },
+                {
+                    "type": "website",
+                    "url": "https://www.slimframework.com",
+                    "comment": "as detected from Composer manifest 'homepage'"
+                },
+                {
+                    "type": "documentation",
+                    "url": "https://www.slimframework.com/docs/v4/",
+                    "comment": "as detected from Composer manifest 'support.docs'"
+                },
+                {
+                    "type": "other",
+                    "url": "https://discourse.slimframework.com/",
+                    "comment": "as detected from Composer manifest 'support.forum'"
+                },
+                {
+                    "type": "chat",
+                    "url": "irc://irc.freenode.net:6667/slimphp",
+                    "comment": "as detected from Composer manifest 'support.irc'"
+                },
+                {
+                    "type": "issue-tracker",
+                    "url": "https://github.com/slimphp/Slim/issues",
+                    "comment": "as detected from Composer manifest 'support.issues'"
+                },
+                {
+                    "type": "other",
+                    "url": "https://www.slimframework.com/blog/feed.rss",
+                    "comment": "as detected from Composer manifest 'support.rss'"
+                },
+                {
+                    "type": "other",
+                    "url": "https://slimphp.slack.com/",
+                    "comment": "as detected from Composer manifest 'support.slack'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/slimphp/Slim",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                },
+                {
+                    "type": "other",
+                    "url": "https://github.com/slimphp/Slim/wiki",
+                    "comment": "as detected from Composer manifest 'support.wiki'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "3675bf6baac66b07032575b7bef4200b60b7974b"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "3675bf6baac66b07032575b7bef4200b60b7974b"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "smi2/phpclickhouse-1.26.925.0",
+            "type": "library",
+            "name": "phpclickhouse",
+            "version": "1.26.925",
+            "group": "smi2",
+            "description": "PHP ClickHouse Client",
+            "author": "Igor Strykhar",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/smi2/phpclickhouse@1.26.925",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/smi2/phpClickHouse/zipball/9ef306425bdf519d4b6951b623752802b2156d25",
+                    "comment": "dist reference: 9ef306425bdf519d4b6951b623752802b2156d25"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/smi2/phpClickHouse.git",
+                    "comment": "source reference: 9ef306425bdf519d4b6951b623752802b2156d25"
+                },
+                {
+                    "type": "website",
+                    "url": "https://github.com/smi2/phpClickHouse",
+                    "comment": "as detected from Composer manifest 'homepage'"
+                },
+                {
+                    "type": "issue-tracker",
+                    "url": "https://github.com/smi2/phpClickHouse/issues",
+                    "comment": "as detected from Composer manifest 'support.issues'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/smi2/phpClickHouse/tree/1.26.925",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "9ef306425bdf519d4b6951b623752802b2156d25"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "9ef306425bdf519d4b6951b623752802b2156d25"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "symfony/console-7.4.19.0",
+            "type": "library",
+            "name": "console",
+            "version": "v7.4.19",
+            "group": "symfony",
+            "description": "Eases the creation of beautiful and testable command line interfaces",
+            "author": "Fabien Potencier, Symfony Community",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/symfony/console@v7.4.19",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/symfony/console/zipball/3a1973458b153f566a8d7499bc06ece323d60063",
+                    "comment": "dist reference: 3a1973458b153f566a8d7499bc06ece323d60063"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/symfony/console.git",
+                    "comment": "source reference: 3a1973458b153f566a8d7499bc06ece323d60063"
+                },
+                {
+                    "type": "website",
+                    "url": "https://symfony.com",
+                    "comment": "as detected from Composer manifest 'homepage'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/symfony/console/tree/v7.4.19",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "3a1973458b153f566a8d7499bc06ece323d60063"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "3a1973458b153f566a8d7499bc06ece323d60063"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "symfony/deprecation-contracts-3.7.1.0",
+            "type": "library",
+            "name": "deprecation-contracts",
+            "version": "v3.7.1",
+            "group": "symfony",
+            "description": "A generic function and convention to trigger deprecation notices",
+            "author": "Nicolas Grekas, Symfony Community",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/symfony/deprecation-contracts@v3.7.1",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/symfony/deprecation-contracts/zipball/f3202fa1b5097b0af062dc978b32ecf63404e31d",
+                    "comment": "dist reference: f3202fa1b5097b0af062dc978b32ecf63404e31d"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/symfony/deprecation-contracts.git",
+                    "comment": "source reference: f3202fa1b5097b0af062dc978b32ecf63404e31d"
+                },
+                {
+                    "type": "website",
+                    "url": "https://symfony.com",
+                    "comment": "as detected from Composer manifest 'homepage'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/symfony/deprecation-contracts/tree/v3.7.1",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "f3202fa1b5097b0af062dc978b32ecf63404e31d"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "f3202fa1b5097b0af062dc978b32ecf63404e31d"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "symfony/polyfill-ctype-1.37.0.0",
+            "type": "library",
+            "name": "polyfill-ctype",
+            "version": "v1.37.0",
+            "group": "symfony",
+            "description": "Symfony polyfill for ctype functions",
+            "author": "Gert de Pagter, Symfony Community",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/symfony/polyfill-ctype@v1.37.0",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/symfony/polyfill-ctype/zipball/141046a8f9477948ff284fa65be2095baafb94f2",
+                    "comment": "dist reference: 141046a8f9477948ff284fa65be2095baafb94f2"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/symfony/polyfill-ctype.git",
+                    "comment": "source reference: 141046a8f9477948ff284fa65be2095baafb94f2"
+                },
+                {
+                    "type": "website",
+                    "url": "https://symfony.com",
+                    "comment": "as detected from Composer manifest 'homepage'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/symfony/polyfill-ctype/tree/v1.37.0",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "141046a8f9477948ff284fa65be2095baafb94f2"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "141046a8f9477948ff284fa65be2095baafb94f2"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "symfony/polyfill-intl-grapheme-1.41.0.0",
+            "type": "library",
+            "name": "polyfill-intl-grapheme",
+            "version": "v1.41.0",
+            "group": "symfony",
+            "description": "Symfony polyfill for intl's grapheme_* functions",
+            "author": "Nicolas Grekas, Symfony Community",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/symfony/polyfill-intl-grapheme@v1.41.0",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/symfony/polyfill-intl-grapheme/zipball/bb899c1db0aa8127dc3afe8cda4a67eb24915f8d",
+                    "comment": "dist reference: bb899c1db0aa8127dc3afe8cda4a67eb24915f8d"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/symfony/polyfill-intl-grapheme.git",
+                    "comment": "source reference: bb899c1db0aa8127dc3afe8cda4a67eb24915f8d"
+                },
+                {
+                    "type": "website",
+                    "url": "https://symfony.com",
+                    "comment": "as detected from Composer manifest 'homepage'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/symfony/polyfill-intl-grapheme/tree/v1.41.0",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "bb899c1db0aa8127dc3afe8cda4a67eb24915f8d"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "bb899c1db0aa8127dc3afe8cda4a67eb24915f8d"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "symfony/polyfill-intl-normalizer-1.42.0.0",
+            "type": "library",
+            "name": "polyfill-intl-normalizer",
+            "version": "v1.42.0",
+            "group": "symfony",
+            "description": "Symfony polyfill for intl's Normalizer class and related functions",
+            "author": "Nicolas Grekas, Symfony Community",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/symfony/polyfill-intl-normalizer@v1.42.0",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/symfony/polyfill-intl-normalizer/zipball/aa20edea75bd9c48cfecc8360922e5a6e5c44502",
+                    "comment": "dist reference: aa20edea75bd9c48cfecc8360922e5a6e5c44502"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/symfony/polyfill-intl-normalizer.git",
+                    "comment": "source reference: aa20edea75bd9c48cfecc8360922e5a6e5c44502"
+                },
+                {
+                    "type": "website",
+                    "url": "https://symfony.com",
+                    "comment": "as detected from Composer manifest 'homepage'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/symfony/polyfill-intl-normalizer/tree/v1.42.0",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "aa20edea75bd9c48cfecc8360922e5a6e5c44502"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "aa20edea75bd9c48cfecc8360922e5a6e5c44502"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "symfony/polyfill-mbstring-1.38.2.0",
+            "type": "library",
+            "name": "polyfill-mbstring",
+            "version": "v1.38.2",
+            "group": "symfony",
+            "description": "Symfony polyfill for the Mbstring extension",
+            "author": "Nicolas Grekas, Symfony Community",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/symfony/polyfill-mbstring@v1.38.2",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/d3d318bad5e7a1bfbd026009c8bfb8d8f99ae6b6",
+                    "comment": "dist reference: d3d318bad5e7a1bfbd026009c8bfb8d8f99ae6b6"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/symfony/polyfill-mbstring.git",
+                    "comment": "source reference: d3d318bad5e7a1bfbd026009c8bfb8d8f99ae6b6"
+                },
+                {
+                    "type": "website",
+                    "url": "https://symfony.com",
+                    "comment": "as detected from Composer manifest 'homepage'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/symfony/polyfill-mbstring/tree/v1.38.2",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "d3d318bad5e7a1bfbd026009c8bfb8d8f99ae6b6"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "d3d318bad5e7a1bfbd026009c8bfb8d8f99ae6b6"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "symfony/polyfill-php80-1.37.0.0",
+            "type": "library",
+            "name": "polyfill-php80",
+            "version": "v1.37.0",
+            "group": "symfony",
+            "description": "Symfony polyfill backporting some PHP 8.0+ features to lower PHP versions",
+            "author": "Ion Bazan, Nicolas Grekas, Symfony Community",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/symfony/polyfill-php80@v1.37.0",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/symfony/polyfill-php80/zipball/dfb55726c3a76ea3b6459fcfda1ec2d80a682411",
+                    "comment": "dist reference: dfb55726c3a76ea3b6459fcfda1ec2d80a682411"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/symfony/polyfill-php80.git",
+                    "comment": "source reference: dfb55726c3a76ea3b6459fcfda1ec2d80a682411"
+                },
+                {
+                    "type": "website",
+                    "url": "https://symfony.com",
+                    "comment": "as detected from Composer manifest 'homepage'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/symfony/polyfill-php80/tree/v1.37.0",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "dfb55726c3a76ea3b6459fcfda1ec2d80a682411"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "dfb55726c3a76ea3b6459fcfda1ec2d80a682411"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "symfony/service-contracts-3.7.3.0",
+            "type": "library",
+            "name": "service-contracts",
+            "version": "v3.7.3",
+            "group": "symfony",
+            "description": "Generic abstractions related to writing services",
+            "author": "Nicolas Grekas, Symfony Community",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/symfony/service-contracts@v3.7.3",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/symfony/service-contracts/zipball/15e6a07ec2a2c75ceb1b21dd98105ee8456d2257",
+                    "comment": "dist reference: 15e6a07ec2a2c75ceb1b21dd98105ee8456d2257"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/symfony/service-contracts.git",
+                    "comment": "source reference: 15e6a07ec2a2c75ceb1b21dd98105ee8456d2257"
+                },
+                {
+                    "type": "website",
+                    "url": "https://symfony.com",
+                    "comment": "as detected from Composer manifest 'homepage'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/symfony/service-contracts/tree/v3.7.3",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "15e6a07ec2a2c75ceb1b21dd98105ee8456d2257"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "15e6a07ec2a2c75ceb1b21dd98105ee8456d2257"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "symfony/string-8.1.7.0",
+            "type": "library",
+            "name": "string",
+            "version": "v8.1.7",
+            "group": "symfony",
+            "description": "Provides an object-oriented API to strings and deals with bytes, UTF-8 code points and grapheme clusters in a unified way",
+            "author": "Nicolas Grekas, Symfony Community",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/symfony/string@v8.1.7",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/symfony/string/zipball/d950140b5f56f31901e5b7a0c04ffc3a3deb943c",
+                    "comment": "dist reference: d950140b5f56f31901e5b7a0c04ffc3a3deb943c"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/symfony/string.git",
+                    "comment": "source reference: d950140b5f56f31901e5b7a0c04ffc3a3deb943c"
+                },
+                {
+                    "type": "website",
+                    "url": "https://symfony.com",
+                    "comment": "as detected from Composer manifest 'homepage'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/symfony/string/tree/v8.1.7",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "d950140b5f56f31901e5b7a0c04ffc3a3deb943c"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "d950140b5f56f31901e5b7a0c04ffc3a3deb943c"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        },
+        {
+            "bom-ref": "vlucas/phpdotenv-5.7.0.0",
+            "type": "library",
+            "name": "phpdotenv",
+            "version": "v5.7.0",
+            "group": "vlucas",
+            "description": "Loads environment variables from `.env` to `$_ENV` and `$_SERVER` automagically, and optionally to `getenv()`.",
+            "author": "Graham Campbell, Vance Lucas",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "BSD-3-Clause"
+                    }
+                }
+            ],
+            "purl": "pkg:composer/vlucas/phpdotenv@v5.7.0",
+            "externalReferences": [
+                {
+                    "type": "distribution",
+                    "url": "https://api.github.com/repos/vlucas/phpdotenv/zipball/301c07936b16d88628b126b01d082ba153cf4c40",
+                    "comment": "dist reference: 301c07936b16d88628b126b01d082ba153cf4c40"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/vlucas/phpdotenv.git",
+                    "comment": "source reference: 301c07936b16d88628b126b01d082ba153cf4c40"
+                },
+                {
+                    "type": "issue-tracker",
+                    "url": "https://github.com/vlucas/phpdotenv/issues",
+                    "comment": "as detected from Composer manifest 'support.issues'"
+                },
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/vlucas/phpdotenv/tree/v5.7.0",
+                    "comment": "as detected from Composer manifest 'support.source'"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "cdx:composer:package:distReference",
+                    "value": "301c07936b16d88628b126b01d082ba153cf4c40"
+                },
+                {
+                    "name": "cdx:composer:package:sourceReference",
+                    "value": "301c07936b16d88628b126b01d082ba153cf4c40"
+                },
+                {
+                    "name": "cdx:composer:package:type",
+                    "value": "library"
+                }
+            ]
+        }
+    ],
+    "dependencies": [
+        {
+            "ref": "fig/http-message-util-1.1.5.0"
+        },
+        {
+            "ref": "graham-campbell/result-type-1.2.0.0",
+            "dependsOn": [
+                "phpoption/phpoption-1.10.0.0"
+            ]
+        },
+        {
+            "ref": "guzzlehttp/guzzle-7.15.5.0",
+            "dependsOn": [
+                "guzzlehttp/promises-2.5.3.0",
+                "guzzlehttp/psr7-2.13.1.0",
+                "psr/http-client-1.0.3.0",
+                "symfony/deprecation-contracts-3.7.1.0",
+                "symfony/polyfill-php80-1.37.0.0"
+            ]
+        },
+        {
+            "ref": "guzzlehttp/promises-2.5.3.0",
+            "dependsOn": [
+                "symfony/deprecation-contracts-3.7.1.0"
+            ]
+        },
+        {
+            "ref": "guzzlehttp/psr7-2.13.1.0",
+            "dependsOn": [
+                "psr/http-factory-1.1.0.0",
+                "psr/http-message-2.0.0.0",
+                "ralouphie/getallheaders-3.0.3.0",
+                "symfony/deprecation-contracts-3.7.1.0",
+                "symfony/polyfill-php80-1.37.0.0"
+            ]
+        },
+        {
+            "ref": "laravel/serializable-closure-2.1.0.0"
+        },
+        {
+            "ref": "monolog/monolog-3.12.0.0",
+            "dependsOn": [
+                "psr/log-3.0.2.0"
+            ]
+        },
+        {
+            "ref": "nikic/fast-route-1.3.1.0"
+        },
+        {
+            "ref": "php-di/invoker-2.3.7.0",
+            "dependsOn": [
+                "psr/container-2.0.2.0"
+            ]
+        },
+        {
+            "ref": "php-di/php-di-7.1.1.0",
+            "dependsOn": [
+                "laravel/serializable-closure-2.1.0.0",
+                "php-di/invoker-2.3.7.0",
+                "psr/container-2.0.2.0"
+            ]
+        },
+        {
+            "ref": "phpoption/phpoption-1.10.0.0"
+        },
+        {
+            "ref": "psr/container-2.0.2.0"
+        },
+        {
+            "ref": "psr/http-client-1.0.3.0",
+            "dependsOn": [
+                "psr/http-message-2.0.0.0"
+            ]
+        },
+        {
+            "ref": "psr/http-factory-1.1.0.0",
+            "dependsOn": [
+                "psr/http-message-2.0.0.0"
+            ]
+        },
+        {
+            "ref": "psr/http-message-2.0.0.0"
+        },
+        {
+            "ref": "psr/http-server-handler-1.0.2.0",
+            "dependsOn": [
+                "psr/http-message-2.0.0.0"
+            ]
+        },
+        {
+            "ref": "psr/http-server-middleware-1.0.2.0",
+            "dependsOn": [
+                "psr/http-message-2.0.0.0",
+                "psr/http-server-handler-1.0.2.0"
+            ]
+        },
+        {
+            "ref": "psr/log-3.0.2.0"
+        },
+        {
+            "ref": "ralouphie/getallheaders-3.0.3.0"
+        },
+        {
+            "ref": "slim/http-1.4.0.0",
+            "dependsOn": [
+                "psr/http-factory-1.1.0.0",
+                "psr/http-message-2.0.0.0"
+            ]
+        },
+        {
+            "ref": "slim/psr7-1.8.0.0",
+            "dependsOn": [
+                "fig/http-message-util-1.1.5.0",
+                "psr/http-factory-1.1.0.0",
+                "psr/http-message-2.0.0.0",
+                "ralouphie/getallheaders-3.0.3.0"
+            ]
+        },
+        {
+            "ref": "slim/slim-4.15.3.0",
+            "dependsOn": [
+                "nikic/fast-route-1.3.1.0",
+                "psr/container-2.0.2.0",
+                "psr/http-factory-1.1.0.0",
+                "psr/http-message-2.0.0.0",
+                "psr/http-server-handler-1.0.2.0",
+                "psr/http-server-middleware-1.0.2.0",
+                "psr/log-3.0.2.0"
+            ]
+        },
+        {
+            "ref": "smi2/phpclickhouse-1.26.925.0"
+        },
+        {
+            "ref": "symfony/console-7.4.19.0",
+            "dependsOn": [
+                "symfony/deprecation-contracts-3.7.1.0",
+                "symfony/polyfill-mbstring-1.38.2.0",
+                "symfony/service-contracts-3.7.3.0",
+                "symfony/string-8.1.7.0"
+            ]
+        },
+        {
+            "ref": "symfony/deprecation-contracts-3.7.1.0"
+        },
+        {
+            "ref": "symfony/polyfill-ctype-1.37.0.0"
+        },
+        {
+            "ref": "symfony/polyfill-intl-grapheme-1.41.0.0"
+        },
+        {
+            "ref": "symfony/polyfill-intl-normalizer-1.42.0.0"
+        },
+        {
+            "ref": "symfony/polyfill-mbstring-1.38.2.0"
+        },
+        {
+            "ref": "symfony/polyfill-php80-1.37.0.0"
+        },
+        {
+            "ref": "symfony/service-contracts-3.7.3.0",
+            "dependsOn": [
+                "psr/container-2.0.2.0",
+                "symfony/deprecation-contracts-3.7.1.0"
+            ]
+        },
+        {
+            "ref": "symfony/string-8.1.7.0",
+            "dependsOn": [
+                "symfony/polyfill-ctype-1.37.0.0",
+                "symfony/polyfill-intl-grapheme-1.41.0.0",
+                "symfony/polyfill-intl-normalizer-1.42.0.0",
+                "symfony/polyfill-mbstring-1.38.2.0"
+            ]
+        },
+        {
+            "ref": "vlucas/phpdotenv-5.7.0.0",
+            "dependsOn": [
+                "graham-campbell/result-type-1.2.0.0",
+                "phpoption/phpoption-1.10.0.0",
+                "symfony/polyfill-ctype-1.37.0.0",
+                "symfony/polyfill-mbstring-1.38.2.0",
+                "symfony/polyfill-php80-1.37.0.0"
+            ]
+        },
+        {
+            "ref": "garlicsignage/garlic-analytics-dev-main",
+            "dependsOn": [
+                "slim/slim-4.15.3.0",
+                "slim/psr7-1.8.0.0",
+                "slim/http-1.4.0.0",
+                "php-di/php-di-7.1.1.0",
+                "vlucas/phpdotenv-5.7.0.0",
+                "monolog/monolog-3.12.0.0",
+                "symfony/console-7.4.19.0",
+                "guzzlehttp/guzzle-7.15.5.0",
+                "smi2/phpclickhouse-1.26.925.0"
+            ]
+        }
+    ]
+}
