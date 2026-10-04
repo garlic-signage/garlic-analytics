@@ -57,6 +57,7 @@ Both must be green. The same two commands run on GitHub after every push.
 ## Documentation
 
 - [docs/architecture.md](docs/architecture.md): how the application is put together and how a request runs through it
+- [docs/openapi.yaml](docs/openapi.yaml): the API (OpenAPI 3.1), formats and rules of all endpoints
 - [docs/cli.md](docs/cli.md): administration commands (`bin/console`), migrations and API keys
 - [CONTRIBUTING.md](CONTRIBUTING.md): setup, checks and conventions for contributors
 

@@ -1,0 +1,459 @@
+openapi: 3.1.0
+
+info:
+  title: garlic-analytics API
+  version: 0.1.0
+  license:
+    name: AGPL-3.0-only
+    url: https://www.gnu.org/licenses/agpl-3.0.html
+  description: |
+    Non-public REST API of garlic-analytics, the analytics service of the GarlicSignage stack.
+    It is reachable only for CMS instances and the collector.
+
+    Currently the ingest endpoints exist. Read endpoints are added with their modules.
+
+    ## Authentication
+
+    Every endpoint under `/v1` except `/v1/health` needs an API key, sent as
+    `Authorization: Bearer <key>`. Never as a query parameter. The scope follows from the HTTP method:
+    `POST` needs `ingest`. A missing or unknown key gives `401`, a key without the scope gives `403`.
+    Keys are managed with `bin/console apikey:create|list|revoke`.
+
+    ## Ingest
+
+    The body of every ingest request is `{"events": [...]}`, one request is one batch.
+
+    - **All or nothing:** if one event is invalid, nothing is stored and `422` lists the errors of all
+      events (up to 100), so the client can fix and resend the whole batch.
+    - **Times** are ISO 8601 to the second with an offset (`2026-10-03T15:30:27+02:00` or `Z`).
+      Fractions of seconds are not accepted. They are stored in UTC.
+    - **Limits** per request and per module (`max_events`, `max_age_days`, `max_future_seconds`) are set in
+      `config/settings/config_<module>.ini`. The defaults are named in the endpoints.
+    - **Idempotency:** the same request sent again (client retry) is dropped by ClickHouse and answered with
+      `201` as well. Overlapping but different batches are not detected.
+    - Clients send individual events, never pre-aggregated values.
+
+    ## Errors and retries
+
+    Errors are JSON `{"error": "..."}`.
+
+    - `2xx`: success.
+    - `4xx`: the client must not retry unchanged.
+    - `5xx`: server problem, retry later.
+
+externalDocs:
+  description: Architecture and design decisions
+  url: architecture.md
+
+tags:
+  - name: Health
+    description: Liveness of the service.
+  - name: PlayLog
+    description: Proof-of-play reports. Kept 2 years.
+  - name: EventLog
+    description: Events of players. Kept 6 months.
+  - name: SystemLog
+    description: System reports of players. Kept 6 months.
+  - name: ConnectLog
+    description: Connects (index requests) of players. Kept 4 years, hourly aggregate `connect_hourly`.
+
+security:
+  - bearerAuth: []
+
+paths:
+  /v1/health:
+    get:
+      tags: [Health]
+      summary: Liveness check
+      description: No authentication.
+      operationId: getHealth
+      security: []
+      responses:
+        '200':
+          description: The service is up.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    const: ok
+
+  /v1/playlog:
+    post:
+      tags: [PlayLog]
+      summary: Ingest play logs
+      description: |
+        One entry is one playback of a content on a player. Needs the scope `ingest`.
+        Defaults: `max_events` 5000, `max_age_days` 730 (checked against `start_time`),
+        `max_future_seconds` 86400 (checked against `end_time`).
+      operationId: ingestPlayLog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayLogRequest'
+            example:
+              events:
+                - player_id: player-1
+                  content_id: content-42
+                  start_time: '2026-10-03T15:30:00+02:00'
+                  end_time: '2026-10-03T15:30:10+02:00'
+      responses:
+        '201': { $ref: '#/components/responses/Accepted' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+  /v1/eventlog:
+    post:
+      tags: [EventLog]
+      summary: Ingest player events
+      description: |
+        One entry is one event of a player. Needs the scope `ingest`.
+        Defaults: `max_events` 5000, `max_age_days` 180, `max_future_seconds` 86400 (checked against `event_time`).
+      operationId: ingestEventLog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventLogRequest'
+            example:
+              events:
+                - player_id: player-1
+                  event_time: '2026-10-03T15:30:27+02:00'
+                  event_type: warning
+                  event_source: ContentManager
+                  event_name: FETCH_FAILED
+                  metadata:
+                    resourceURI: https://example.com/a.jpg
+                    errorMessage: Host not found
+      responses:
+        '201': { $ref: '#/components/responses/Accepted' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+  /v1/systemlog:
+    post:
+      tags: [SystemLog]
+      summary: Ingest system reports
+      description: |
+        One entry is one system report of a player. Needs the scope `ingest`.
+        Defaults: `max_events` 5000, `max_age_days` 180, `max_future_seconds` 86400 (checked against `reported_at`).
+
+        `system_start` is not checked for age, a player can run longer than the retention.
+        The values are not compared with each other, a player with a measuring error keeps its report.
+        Optional values a player does not report are stored as `NULL` (`hdmi_output`: empty).
+      operationId: ingestSystemLog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SystemLogRequest'
+            example:
+              events:
+                - player_id: player-1
+                  reported_at: '2026-10-03T15:30:27+02:00'
+                  system_start: '2026-09-20T07:12:03+02:00'
+                  time_zone: Europe/Berlin
+                  disk_total: 31457280000
+                  disk_free: 12884901888
+                  cpu_usage: 31
+                  memory_total: 4294967296
+                  memory_used: 2147483648
+                  hdmi_output: HDMI-1
+      responses:
+        '201': { $ref: '#/components/responses/Accepted' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+  /v1/connectlog:
+    post:
+      tags: [ConnectLog]
+      summary: Ingest connects
+      description: |
+        One entry is one connect (index request) of a player. Needs the scope `ingest`.
+        There is no collector for this type, the CMS sends the connects.
+        Defaults: `max_events` 5000, `max_age_days` 1461, `max_future_seconds` 86400 (checked against `connected_at`).
+
+        A sender with many players should collect the connects and send them together (a few seconds up to a minute)
+        to spare ClickHouse many tiny inserts. Two connects of the same player in the same second with the same
+        `refresh` count as one.
+      operationId: ingestConnectLog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectLogRequest'
+            example:
+              events:
+                - player_id: player-1
+                  connected_at: '2026-10-03T15:30:27+02:00'
+                  refresh: 900
+      responses:
+        '201': { $ref: '#/components/responses/Accepted' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: API key with the scope needed by the endpoint.
+
+  responses:
+    Accepted:
+      description: The batch is stored (or was already stored, see Idempotency).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AcceptedResponse'
+    Unauthorized:
+      description: API key missing (`Missing API key.`) or unknown (`Invalid API key.`).
+      headers:
+        WWW-Authenticate:
+          schema:
+            type: string
+            const: Bearer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: The API key has no scope `ingest`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ValidationFailed:
+      description: |
+        The body is invalid, nothing was stored. Also returned if the batch is empty or has more than
+        `max_events` events.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationErrorResponse'
+          example:
+            error: Validation failed
+            errors:
+              events.0.end_time: must not be before start_time
+    ServerError:
+      description: Server or database problem. Retry later.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    AcceptedResponse:
+      type: object
+      required: [accepted]
+      properties:
+        accepted:
+          type: integer
+          description: Number of events of the batch.
+          examples: [1]
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+          description: The real error message of a `500`, only if the server runs with `APP_DEBUG=true`.
+
+    ValidationErrorResponse:
+      type: object
+      required: [error, errors]
+      properties:
+        error:
+          type: string
+          const: Validation failed
+        errors:
+          type: object
+          description: |
+            Up to 100 messages. The key is the field, `events` for the list itself or
+            `events.<index>.<name>` for an event (`events.2.metadata.key` for an entry of `metadata`).
+          additionalProperties:
+            type: string
+
+    Timestamp:
+      type: string
+      pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$'
+      description: ISO 8601 to the second with an offset. No fractions of seconds.
+      examples: ['2026-10-03T15:30:27+02:00']
+
+    PlayerId:
+      type: string
+      minLength: 1
+      maxLength: 128
+      description: ID of the player. Must not be blank.
+
+    PlayLogRequest:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          minItems: 1
+          maxItems: 5000
+          items:
+            $ref: '#/components/schemas/PlayLogEvent'
+
+    PlayLogEvent:
+      type: object
+      required: [player_id, content_id, start_time, end_time]
+      properties:
+        player_id:
+          $ref: '#/components/schemas/PlayerId'
+        content_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: ID of the played content. Must not be blank.
+        start_time:
+          $ref: '#/components/schemas/Timestamp'
+        end_time:
+          allOf:
+            - $ref: '#/components/schemas/Timestamp'
+          description: Must not be before `start_time`.
+
+    EventLogRequest:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          minItems: 1
+          maxItems: 5000
+          items:
+            $ref: '#/components/schemas/EventLogEvent'
+
+    EventLogEvent:
+      type: object
+      required: [player_id, event_time, event_type, event_source, event_name]
+      properties:
+        player_id:
+          $ref: '#/components/schemas/PlayerId'
+        event_time:
+          $ref: '#/components/schemas/Timestamp'
+        event_type:
+          type: string
+          enum: [debug, informational, notice, warning, error, critical, fatal]
+          description: The client normalizes to these names, others are rejected.
+        event_source:
+          type: string
+          minLength: 1
+          maxLength: 128
+        event_name:
+          type: string
+          minLength: 1
+          maxLength: 128
+        metadata:
+          type: object
+          description: Optional. Stored as an empty map if missing.
+          maxProperties: 20
+          propertyNames:
+            minLength: 1
+            maxLength: 64
+          additionalProperties:
+            type: string
+            maxLength: 1024
+
+    SystemLogRequest:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          minItems: 1
+          maxItems: 5000
+          items:
+            $ref: '#/components/schemas/SystemLogEvent'
+
+    SystemLogEvent:
+      type: object
+      required: [player_id, reported_at, system_start, time_zone, disk_total, disk_free]
+      properties:
+        player_id:
+          $ref: '#/components/schemas/PlayerId'
+        reported_at:
+          allOf:
+            - $ref: '#/components/schemas/Timestamp'
+          description: Creation time of the report. Checked against `max_age_days` and the future.
+        system_start:
+          allOf:
+            - $ref: '#/components/schemas/Timestamp'
+          description: Boot time of the player. Not checked for age.
+        time_zone:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: Stored as sent. Players send e.g. `MEZ` as well as `Europe/Berlin`.
+        disk_total:
+          type: integer
+          minimum: 0
+          description: Bytes.
+        disk_free:
+          type: integer
+          minimum: 0
+          description: Bytes.
+        cpu_usage:
+          type: [integer, 'null']
+          minimum: 0
+          maximum: 100
+        memory_total:
+          type: [integer, 'null']
+          minimum: 0
+          description: Bytes.
+        memory_used:
+          type: [integer, 'null']
+          minimum: 0
+          description: Bytes.
+        hdmi_output:
+          type: string
+          maxLength: 64
+          description: Optional. Stored as an empty string if missing.
+
+    ConnectLogRequest:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          minItems: 1
+          maxItems: 5000
+          items:
+            $ref: '#/components/schemas/ConnectLogEvent'
+
+    ConnectLogEvent:
+      type: object
+      required: [player_id, connected_at, refresh]
+      properties:
+        player_id:
+          $ref: '#/components/schemas/PlayerId'
+        connected_at:
+          $ref: '#/components/schemas/Timestamp'
+        refresh:
+          type: integer
+          minimum: 1
+          maximum: 86400
+          description: |
+            Refresh interval of the player in seconds, the time the connect covers.
+            `covered_s` of the hourly aggregate is their sum.

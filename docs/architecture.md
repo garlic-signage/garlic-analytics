@@ -37,7 +37,7 @@ CMS -> GET /v1/<module>/... (API) -> displays results, resolves IDs to names and
 
 - Not public. Reachable only from the internal network or restricted to specific addresses by firewall.
 - Every module provides its own endpoints: one for ingest and one or more for reading, e.g. `POST /v1/playlog` and `GET /v1/playlog/{player_id}`. See [Modules](#modules).
-- Ingest: one request per source file, normalized events as JSON (`{"events": [...]}`), gzip supported.
+- Ingest: one request per source file, normalized events as JSON (`{"events": [...]}`). Gzip of the request body is planned, not implemented yet (it will be a middleware before the body parsing, with a limit for the decompressed size). Format: see [openapi.yaml](openapi.yaml).
 - Idempotency: one request is one `INSERT`. Its `insert_deduplication_token` is a hash of the events, together with `deduplicate_blocks_in_dependent_materialized_views=1` the same request sent again (client retry) is dropped, also in the hourly tables (they need `non_replicated_deduplication_window`). Overlapping but different batches are not detected. The answer is `201` in both cases. The window is 1,000,000 inserts, a request must stay one block (limit of events per request).
 - Responses:
   - `2xx`: success
@@ -65,69 +65,20 @@ CMS -> GET /v1/<module>/... (API) -> displays results, resolves IDs to names and
 
 ## Ingest formats
 
-The body of every ingest request is `{"events": [...]}`. Times are ISO 8601 to the second with an offset (`2026-10-03T15:30:27+02:00` or `Z`, no fractions of seconds), the API stores them in UTC. The answer is `201 {"accepted": n}`, invalid data gives `422` with the errors of all events. The limits are set per module in `config/settings/config_<module>.ini` (`max_events`, `max_age_days`, `max_future_seconds`).
+The request and response formats, the field rules and the limits of all endpoints are defined in [openapi.yaml](openapi.yaml) (OpenAPI 3.1). It is the only place for them, it is changed together with the code of an endpoint. This section holds only what the specification does not say.
 
-**`POST /v1/playlog`** (table `play_log`, kept 2 years)
+| Endpoint | Table | Retention (`max_age_days`) | Aggregate |
+|---|---|---|---|
+| `POST /v1/playlog` | `play_log` | 2 years (730) | |
+| `POST /v1/eventlog` | `event_log` | 6 months (180) | |
+| `POST /v1/systemlog` | `system_log` | 6 months (180) | |
+| `POST /v1/connectlog` | `connect_log` | 4 years (1461) | `connect_hourly` |
 
-| Field | Description |
-|---|---|
-| `player_id` | String, up to 128 characters |
-| `content_id` | String, up to 128 characters |
-| `start_time`, `end_time` | `end_time` must not be before `start_time` |
+The limits are set per module in `config/settings/config_<module>.ini` (`max_events`, `max_age_days`, `max_future_seconds`).
 
-**`POST /v1/eventlog`** (table `event_log`, kept 6 months, `max_age_days` 180)
+**`connectlog`:** there is no collector for this type, the CMS sends the connects to the API. The retention of 4 years is meant for the migration of the data of SmilControl. When it is done, it is set back to 3 months with a new migration file (`ALTER TABLE connect_log MODIFY TTL connected_at + INTERVAL 3 MONTH`, repeatable) and `max_age_days = 90`. The next merge then drops everything older.
 
-| Field | Description |
-|---|---|
-| `player_id` | String, up to 128 characters |
-| `event_time` | Time of the event |
-| `event_type` | One of `debug`, `informational`, `notice`, `warning`, `error`, `critical`, `fatal`. The client normalizes to these names, the API rejects others. |
-| `event_source`, `event_name` | Strings, up to 128 characters |
-| `metadata` | Optional object with string values: up to 20 entries, key up to 64, value up to 1024 characters. Stored as an empty map if missing. |
-
-**`POST /v1/systemlog`** (table `system_log`, kept 6 months, `max_age_days` 180)
-
-One entry is one system report.
-
-| Field | Description |
-|---|---|
-| `player_id` | String, up to 128 characters |
-| `reported_at` | Creation time of the report. Checked against `max_age_days` and the future. |
-| `system_start` | Boot time of the player. Not checked for age, a player can run longer than the retention. |
-| `time_zone` | String, up to 64 characters, stored as sent (players send e.g. `MEZ` as well as `Europe/Berlin`) |
-| `disk_total`, `disk_free` | Integers (bytes), 0 or more |
-| `cpu_usage` | Optional integer, 0 to 100 |
-| `memory_total`, `memory_used` | Optional integers (bytes), 0 or more |
-| `hdmi_output` | Optional string, up to 64 characters |
-
-Optional values a player does not report are stored as `NULL` (`hdmi_output`: empty). The values are not compared with each other, a player with a measuring error keeps its report.
-
-**`POST /v1/connectlog`** (table `connect_log`, kept 4 years, `max_age_days` 1461, hourly aggregate `connect_hourly`)
-
-One entry is one connect (index request) of a player. There is no collector for this type: the CMS sends the connects to the API.
-
-The retention of 4 years is meant for the migration of the data of SmilControl. When it is done, it is set back to 3 months with a new migration file (`ALTER TABLE connect_log MODIFY TTL connected_at + INTERVAL 3 MONTH`, repeatable) and `max_age_days = 90`. The next merge then drops everything older.
-
-| Field | Description |
-|---|---|
-| `player_id` | String, up to 128 characters |
-| `connected_at` | Time of the connect |
-| `refresh` | Integer, 1 to 86400: the refresh interval of the player in seconds, the time the connect covers (`covered_s` of the aggregate is their sum) |
-
-The sender decides how to send them. One request with one entry works, but a sender with many players should collect the connects and send them together (a few seconds up to a minute) to spare ClickHouse many tiny inserts. The idempotency works the same way for one or many entries, but two connects of the same player in the same second with the same `refresh` count as one. ClickHouse `async_insert` is not used: it cannot be combined with the deduplication in the hourly table.
-
-Example for `POST /v1/eventlog`:
-
-```json
-{"events": [{
-  "player_id": "player-1",
-  "event_time": "2026-10-03T15:30:27+02:00",
-  "event_type": "warning",
-  "event_source": "ContentManager",
-  "event_name": "FETCH_FAILED",
-  "metadata": {"resourceURI": "https://example.com/a.jpg", "errorMessage": "Host not found"}
-}]}
-```
+The sender of connects decides how to send them. One request with one entry works, but a sender with many players should collect the connects and send them together (a few seconds up to a minute) to spare ClickHouse many tiny inserts. ClickHouse `async_insert` is not used: it cannot be combined with the deduplication in the hourly table.
 
 ## Authentication
 
