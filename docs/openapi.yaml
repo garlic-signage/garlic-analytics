@@ -32,6 +32,10 @@ info:
     - **Idempotency:** the same request sent again (client retry) is dropped by ClickHouse and answered with
       `201` as well. Overlapping but different batches are not detected.
     - Clients send individual events, never pre-aggregated values.
+    - **Gzip:** the body may be sent gzip-compressed with the header `Content-Encoding: gzip`. Any other
+      encoding gives `415`, broken or incomplete gzip data `400`.
+    - **Size:** a request body must not be larger than 8 MiB, packed and unpacked (`MAX_BODY_BYTES` in `.env`),
+      otherwise `413`. The check is done while unpacking, before the API key is checked.
 
     ## Errors and retries
 
@@ -90,6 +94,8 @@ paths:
         Defaults: `max_events` 5000, `max_age_days` 730 (checked against `start_time`),
         `max_future_seconds` 86400 (checked against `end_time`).
       operationId: ingestPlayLog
+      parameters:
+        - $ref: '#/components/parameters/ContentEncoding'
       requestBody:
         required: true
         content:
@@ -104,8 +110,11 @@ paths:
                   end_time: '2026-10-03T15:30:10+02:00'
       responses:
         '201': { $ref: '#/components/responses/Accepted' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedEncoding' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
         '500': { $ref: '#/components/responses/ServerError' }
 
@@ -117,6 +126,8 @@ paths:
         One entry is one event of a player. Needs the scope `ingest`.
         Defaults: `max_events` 5000, `max_age_days` 180, `max_future_seconds` 86400 (checked against `event_time`).
       operationId: ingestEventLog
+      parameters:
+        - $ref: '#/components/parameters/ContentEncoding'
       requestBody:
         required: true
         content:
@@ -135,8 +146,11 @@ paths:
                     errorMessage: Host not found
       responses:
         '201': { $ref: '#/components/responses/Accepted' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedEncoding' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
         '500': { $ref: '#/components/responses/ServerError' }
 
@@ -152,6 +166,8 @@ paths:
         The values are not compared with each other, a player with a measuring error keeps its report.
         Optional values a player does not report are stored as `NULL` (`hdmi_output`: empty).
       operationId: ingestSystemLog
+      parameters:
+        - $ref: '#/components/parameters/ContentEncoding'
       requestBody:
         required: true
         content:
@@ -172,8 +188,11 @@ paths:
                   hdmi_output: HDMI-1
       responses:
         '201': { $ref: '#/components/responses/Accepted' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedEncoding' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
         '500': { $ref: '#/components/responses/ServerError' }
 
@@ -190,6 +209,8 @@ paths:
         to spare ClickHouse many tiny inserts. Two connects of the same player in the same second with the same
         `refresh` count as one.
       operationId: ingestConnectLog
+      parameters:
+        - $ref: '#/components/parameters/ContentEncoding'
       requestBody:
         required: true
         content:
@@ -203,12 +224,25 @@ paths:
                   refresh: 900
       responses:
         '201': { $ref: '#/components/responses/Accepted' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedEncoding' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
         '500': { $ref: '#/components/responses/ServerError' }
 
 components:
+  parameters:
+    ContentEncoding:
+      name: Content-Encoding
+      in: header
+      required: false
+      description: Set to `gzip` if the body is gzip-compressed. Other encodings are rejected with `415`.
+      schema:
+        type: string
+        const: gzip
+
   securitySchemes:
     bearerAuth:
       type: http
@@ -222,6 +256,26 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/AcceptedResponse'
+    BadRequest:
+      description: 'The body is not valid gzip data (broken or incomplete) although `Content-Encoding: gzip` is set.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    PayloadTooLarge:
+      description: |
+        The body is larger than 8 MiB, packed or unpacked. Sent again unchanged, it is rejected again:
+        split the batch.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    UnsupportedEncoding:
+      description: '`Content-Encoding` is something other than `gzip` (or `identity`).'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
     Unauthorized:
       description: API key missing (`Missing API key.`) or unknown (`Invalid API key.`).
       headers:

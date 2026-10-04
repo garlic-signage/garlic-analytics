@@ -20,6 +20,7 @@
 declare(strict_types=1);
 
 use App\Framework\Core\Config\Config;
+use App\Framework\Http\RequestBodyMiddleware;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -35,6 +36,8 @@ use Slim\App;
  * 2. Load routes.php, which registers the routes on $app.
  * 3. Body parsing middleware: converts a JSON request body into an array,
  *    available via getParsedBody().
+ *    Request body middleware: limits the size of the body and unpacks gzip, so it has to be
+ *    added after the body parsing (outside of it).
  * 4. Routing middleware: finds the route for the URL.
  *    Throws 404 or 405 if there is none.
  * 5. Load and run the error handling.
@@ -44,8 +47,10 @@ use Slim\App;
  *   Request
  *     -> ErrorMiddleware          (added last, runs first)
  *       -> RoutingMiddleware
- *         -> BodyParsingMiddleware
- *           -> Controller
+ *         -> RequestBodyMiddleware
+ *           -> BodyParsingMiddleware
+ *             -> (ApiKeyMiddleware, route group)
+ *               -> Controller
  *
  * Error handling must be added last. Only as the outermost layer it can catch
  * everything thrown further inside, including the 404 from routing.
@@ -62,6 +67,7 @@ return /** @throws ContainerExceptionInterface|NotFoundExceptionInterface */ fun
     $routes($app);
 
     $app->addBodyParsingMiddleware();
+    $app->add(RequestBodyMiddleware::class); // must wrap the body parsing
     $app->addRoutingMiddleware();
 
     /** @var Config $config */

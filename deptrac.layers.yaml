@@ -129,5 +129,6 @@ deptrac:
       - Model
       - Framework
     Model: ~
-    Framework: ~
+    Framework:
+      - Slim
     Collector: ~

@@ -37,7 +37,7 @@ CMS -> GET /v1/<module>/... (API) -> displays results, resolves IDs to names and
 
 - Not public. Reachable only from the internal network or restricted to specific addresses by firewall.
 - Every module provides its own endpoints: one for ingest and one or more for reading, e.g. `POST /v1/playlog` and `GET /v1/playlog/{player_id}`. See [Modules](#modules).
-- Ingest: one request per source file, normalized events as JSON (`{"events": [...]}`). Gzip of the request body is planned, not implemented yet (it will be a middleware before the body parsing, with a limit for the decompressed size). Format: see [openapi.yaml](openapi.yaml).
+- Ingest: one request per source file, normalized events as JSON (`{"events": [...]}`). The body may be gzip-compressed (`Content-Encoding: gzip`), see [Request handling](#request-handling). Format: see [openapi.yaml](openapi.yaml).
 - Idempotency: one request is one `INSERT`. Its `insert_deduplication_token` is a hash of the events, together with `deduplicate_blocks_in_dependent_materialized_views=1` the same request sent again (client retry) is dropped, also in the hourly tables (they need `non_replicated_deduplication_window`). Overlapping but different batches are not detected. The answer is `201` in both cases. The window is 1,000,000 inserts, a request must stay one block (limit of events per request).
 - Responses:
   - `2xx`: success
@@ -118,9 +118,12 @@ The sender of connects decides how to send them. One request with one entry work
   Request
   -> ErrorMiddleware          (added last, runs first)
   -> RoutingMiddleware
+  -> RequestBodyMiddleware
   -> BodyParsingMiddleware
+  -> ApiKeyMiddleware         (route group `/v1`)
   -> Controller
 
+- RequestBodyMiddleware limits the size of the body (`MAX_BODY_BYTES`, default 8 MiB, packed and unpacked) and unpacks a gzip body (`Content-Encoding: gzip`). It must run before the body parsing and therefore before the authentication, so the data is inflated in small steps and the request is stopped as soon as the unpacked size exceeds the limit (zip bomb). Answers: `413` too large, `415` other encoding than gzip, `400` broken or incomplete gzip data.
 - BodyParsingMiddleware converts a JSON request body into an array.
 - RoutingMiddleware finds the route for the URL. It throws 404 or 405 if there is none.
 - ErrorMiddleware is added last. Only as the outermost layer it can catch everything thrown further inside, including the 404 from routing.
@@ -139,7 +142,7 @@ The sender of connects decides how to send them. One request with one entry work
 
 ## Configuration
 
-- Environment: `APP_ENV` sets the log level (`dev` from debug, `prod` from error, anything else from info). `APP_DEBUG=true` adds the real error message to `500` responses.
+- Environment: `MAX_BODY_BYTES` limits the size of a request body (default 8388608). `APP_ENV` sets the log level (`dev` from debug, `prod` from error, anything else from info). `APP_DEBUG=true` adds the real error message to `500` responses.
 - Module settings: one INI file per module, named `config_<module>.ini`. A file is loaded on first access and cached for the rest of the request.
 - All INI values are strings. Numbers are cast by the caller.
 - A missing or broken INI file throws a `CoreException`.

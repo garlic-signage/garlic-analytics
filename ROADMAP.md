@@ -14,6 +14,7 @@ The foundation: accept normalized events and store them safely.
 - `GET /v1/health`
 - Collector core: SMIL adapter, file processing with inbox, processed and error handling, `bin/console collector:run`
 - OpenAPI description of the ingest API (`docs/openapi.yaml`)
+- Gzip request bodies and a size limit for request bodies
 
 ## 0.2 Reports
 
@@ -22,7 +23,6 @@ Make the collected data usable.
 - Read endpoints for proof-of-play (plays and duration per player, media and time range, paginated)
 - Time zone aware queries based on hourly aggregates
 - Read endpoints described in `docs/openapi.yaml`
-- Gzip request bodies (middleware with a limit for the decompressed size), if a sender needs it
 
 ## 0.3 More aggregates
 
