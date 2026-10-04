@@ -10,3 +10,5 @@ vendor/bin/phpstan analyze
 
 vendor/bin/deptrac analyse -c deptrac.yaml
 vendor/bin/deptrac analyse -c deptrac.layers.yaml
+
+composer CycloneDX:make-sbom --omit=dev --output-format=JSON --output-file=sbom.json
