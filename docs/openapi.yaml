@@ -10,13 +10,13 @@ info:
     Non-public REST API of garlic-analytics, the analytics service of the GarlicSignage stack.
     It is reachable only for CMS instances and the collector.
 
-    Currently the ingest endpoints exist. Read endpoints are added with their modules.
+    The ingest endpoints and the reading of the raw play logs exist. Further read endpoints are added with their modules.
 
     ## Authentication
 
     Every endpoint under `/v1` except `/v1/health` needs an API key, sent as
     `Authorization: Bearer <key>`. Never as a query parameter. The scope follows from the HTTP method:
-    `POST` needs `ingest`. A missing or unknown key gives `401`, a key without the scope gives `403`.
+    `POST` needs `ingest`, `GET` needs `read`. A missing or unknown key gives `401`, a key without the scope gives `403`.
     Keys are managed with `bin/console apikey:create|list|revoke`.
 
     ## Ingest
@@ -53,7 +53,7 @@ tags:
   - name: Health
     description: Liveness of the service.
   - name: PlayLog
-    description: Proof-of-play reports. Kept 2 years.
+    description: Proof-of-play reports. Ingest, and the raw records of a player. Kept 2 years.
   - name: EventLog
     description: Events of players. Kept 6 months.
   - name: SystemLog
@@ -86,6 +86,87 @@ paths:
                     const: ok
 
   /v1/playlog:
+    get:
+      tags: [PlayLog]
+      summary: List the play logs of a player
+      description: |
+        One page of the raw play logs of one player in a time range, with the number of all matching records
+        for the pagination. Needs the scope `read`.
+
+        A play belongs to the time range by its `start_time`: `from` is included, `to` is excluded.
+        The order follows `start_time` (then `content_id` and `end_time`). Two requests are not one transaction:
+        if data arrives between them, `total` and the pages can differ by the new records.
+
+        An unknown player is not an error, the answer is an empty page with `total` 0.
+      operationId: listPlayLog
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: player_id
+          in: query
+          required: true
+          description: ID of the player.
+          schema:
+            $ref: '#/components/schemas/PlayerId'
+        - name: from
+          in: query
+          required: true
+          description: Start of the time range, included. Between 1970 and 2106.
+          schema:
+            $ref: '#/components/schemas/Timestamp'
+        - name: to
+          in: query
+          required: true
+          description: End of the time range, excluded. Must be after `from`.
+          schema:
+            $ref: '#/components/schemas/Timestamp'
+        - name: limit
+          in: query
+          required: false
+          description: Number of records of the page (defaults and maximum are set in `config/settings/config_playlog.ini`).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - name: offset
+          in: query
+          required: false
+          description: Number of records to skip.
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 4294967295
+            default: 0
+        - name: order
+          in: query
+          required: false
+          description: Order by `start_time`, newest first by default.
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: One page of play logs.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayLogPage'
+              example:
+                total: 1234
+                limit: 100
+                offset: 200
+                items:
+                  - content_id: content-42
+                    start_time: '2026-10-03T13:30:00Z'
+                    end_time: '2026-10-03T13:30:10Z'
+                    duration_s: 10
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
     post:
       tags: [PlayLog]
       summary: Ingest play logs
@@ -288,15 +369,15 @@ components:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
     Forbidden:
-      description: The API key has no scope `ingest`.
+      description: The API key does not have the scope the endpoint needs (`ingest` for `POST`, `read` for `GET`).
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
     ValidationFailed:
       description: |
-        The body is invalid, nothing was stored. Also returned if the batch is empty or has more than
-        `max_events` events.
+        The body or the query parameters are invalid. Nothing was stored. Also returned if an ingest batch is empty
+        or has more than `max_events` events. For query parameters the key of `errors` is the name of the parameter.
       content:
         application/json:
           schema:
@@ -358,6 +439,42 @@ components:
       minLength: 1
       maxLength: 128
       description: ID of the player. Must not be blank.
+
+    PlayLogPage:
+      type: object
+      required: [total, limit, offset, items]
+      properties:
+        total:
+          type: integer
+          minimum: 0
+          description: Number of all records of the player in the time range.
+        limit:
+          type: integer
+        offset:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlayLogItem'
+
+    PlayLogItem:
+      type: object
+      required: [content_id, start_time, end_time, duration_s]
+      properties:
+        content_id:
+          type: string
+        start_time:
+          type: string
+          description: UTC, with `Z`.
+          examples: ['2026-10-03T13:30:00Z']
+        end_time:
+          type: string
+          description: UTC, with `Z`.
+          examples: ['2026-10-03T13:30:10Z']
+        duration_s:
+          type: integer
+          minimum: 0
+          description: Seconds from `start_time` to `end_time`.
 
     PlayLogRequest:
       type: object

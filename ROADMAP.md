@@ -20,15 +20,16 @@ The foundation: accept normalized events and store them safely.
 
 Make the collected data usable.
 
-- Read endpoints for proof-of-play (plays and duration per player, media and time range, paginated)
+- Raw play logs of a player in a time range, paginated: `GET /v1/playlog` (done)
+- Aggregated proof-of-play (plays and duration per player, media and time range, paginated)
 - Time zone aware queries based on hourly aggregates
-- Read endpoints described in `docs/openapi.yaml`
+- Every new read endpoint described in `docs/openapi.yaml`
 
 ## 0.3 More aggregates
 
 Read the other event types.
 
-- Read endpoints for ConnectLog (`connect_hourly`), EventLog and SystemLog
+- Read endpoints for ConnectLog (`connect_hourly`), EventLog and SystemLog (raw records with the same `Framework\Query` parts as the play log)
 - Aggregation by player group
 - Set the retention of `connect_log` back to 3 months when the migration of SmilControl is done
 

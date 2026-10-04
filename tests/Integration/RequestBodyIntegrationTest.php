@@ -21,16 +21,9 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
-use App\Framework\Core\Config\Config;
-use App\Framework\Core\Config\IniConfigLoader;
-use App\Framework\Core\Crypt;
-use App\Modules\Auth\JsonFileApiKeyStore;
-use App\Modules\Auth\Scope;
 use DateTimeImmutable;
-use DI\ContainerBuilder;
 use PHPUnit\Framework\Attributes\Group;
 use Psr\Http\Message\ResponseInterface;
-use Slim\App;
 use Slim\Psr7\Factory\ServerRequestFactory;
 use Slim\Psr7\Factory\StreamFactory;
 
@@ -39,62 +32,8 @@ use Slim\Psr7\Factory\StreamFactory;
  * test database): gzip bodies, the size limit and the order of the middleware.
  */
 #[Group('integration')]
-class RequestBodyIntegrationTest extends ClickHouseTestCase
+class RequestBodyIntegrationTest extends AppIntegrationTestCase
 {
-    private const string KEY = 'test-key';
-
-    private string $tempDir = '';
-    /** @var App<\Psr\Container\ContainerInterface> */
-    private App $app;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->tempDir = sys_get_temp_dir() . '/garlic-analytics-' . bin2hex(random_bytes(6));
-        mkdir($this->tempDir . '/keys', 0700, true);
-        new JsonFileApiKeyStore($this->tempDir . '/keys/api_keys.json')
-            ->add('test', new Crypt()->createSha256Hash(self::KEY), [Scope::Ingest]);
-
-        $dir   = self::projectDir();
-        $paths = [
-            'systemDir'    => $dir,
-            'configDir'    => $dir . '/config',
-            'migrationDir' => $dir . '/migrations',
-            'keysDir'      => $this->tempDir . '/keys',
-            'logDir'       => $this->tempDir,
-        ];
-
-        $builder = new ContainerBuilder();
-        $builder->addDefinitions([Config::class => new Config(new IniConfigLoader($dir . '/config/settings'), $paths, self::connectionSettings())]);
-        foreach (['_default', 'database', 'playlog', 'auth', 'http'] as $file)
-            $builder->addDefinitions($dir . '/config/services/' . $file . '.php');
-
-        /** @var callable(\Psr\Container\ContainerInterface): App<\Psr\Container\ContainerInterface> $middleware */
-        $middleware = require $dir . '/config/middleware.php';
-        $this->app  = $middleware($builder->build());
-    }
-
-    protected function tearDown(): void
-    {
-        restore_error_handler(); // config/error_handling.php installs one
-
-        foreach ([$this->tempDir . '/keys/*', $this->tempDir . '/*'] as $pattern)
-        {
-            $files = glob($pattern);
-            static::assertIsArray($files);
-            foreach ($files as $file)
-            {
-                if (is_file($file))
-                    unlink($file);
-            }
-        }
-        rmdir($this->tempDir . '/keys');
-        rmdir($this->tempDir);
-
-        parent::tearDown();
-    }
-
     private function body(): string
     {
         $time = new DateTimeImmutable('-1 hour');
@@ -107,7 +46,7 @@ class RequestBodyIntegrationTest extends ClickHouseTestCase
         ]]], JSON_THROW_ON_ERROR);
     }
 
-    private function post(string $body, ?string $encoding, ?string $key = self::KEY): ResponseInterface
+    private function post(string $body, ?string $encoding, ?string $key = self::INGEST_KEY): ResponseInterface
     {
         $request = new ServerRequestFactory()->createServerRequest('POST', '/v1/playlog')
             ->withHeader('Content-Type', 'application/json')
@@ -117,7 +56,7 @@ class RequestBodyIntegrationTest extends ClickHouseTestCase
         if ($key !== null)
             $request = $request->withHeader('Authorization', 'Bearer ' . $key);
 
-        return $this->app->handle($request);
+        return $this->handle($request);
     }
 
     private function playLogRows(): int

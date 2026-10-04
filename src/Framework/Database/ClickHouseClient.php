@@ -119,6 +119,21 @@ readonly class ClickHouseClient implements ClickHouseClientInterface
         }
     }
 
+    public function select(string $sql, array $parameters = []): array
+    {
+        try
+        {
+            /** @var list<array<string,mixed>> $rows */
+            $rows = array_values($this->client->select($sql, $parameters)->rows());
+        }
+        catch (ClickHouseException $e)
+        {
+            throw new DatabaseException('Query failed: ' . $this->firstLine($e), 0, $e);
+        }
+
+        return $rows;
+    }
+
     /**
      * One row as an object with the column names as keys. An array value is a Map, which JSON needs as an
      * object also when it is empty or has keys like 0, 1, 2.

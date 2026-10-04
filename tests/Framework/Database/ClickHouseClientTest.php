@@ -207,4 +207,27 @@ class ClickHouseClientTest extends TestCase
 
         new ClickHouseClient($driver)->insert('t', [['x']], ['a']);
     }
+
+    #[Group('units')]
+    public function testSelectPassesTheParametersAndReturnsTheRows(): void
+    {
+        $statement = static::createStub(Statement::class);
+        $statement->method('rows')->willReturn([3 => ['n' => 1], 7 => ['n' => 2]]);
+        $driver = $this->createMock(Client::class);
+        $driver->expects($this->once())->method('select')->with('SELECT {a:UInt8} AS n', ['a' => 1])->willReturn($statement);
+
+        static::assertSame([['n' => 1], ['n' => 2]], new ClickHouseClient($driver)->select('SELECT {a:UInt8} AS n', ['a' => 1]));
+    }
+
+    #[Group('units')]
+    public function testSelectReportsAFailureWithTheFirstLineOnly(): void
+    {
+        $driver = static::createStub(Client::class);
+        $driver->method('select')->willThrowException(new QueryException("Unknown column x. (UNKNOWN_IDENTIFIER)\nIN:SELECT x"));
+
+        $this->expectException(DatabaseException::class);
+        $this->expectExceptionMessage('Query failed: Unknown column x. (UNKNOWN_IDENTIFIER)');
+
+        new ClickHouseClient($driver)->select('SELECT x');
+    }
 }

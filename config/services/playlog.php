@@ -20,11 +20,16 @@
 declare(strict_types=1);
 
 use App\Modules\PlayLog\PlayLogController;
+use App\Modules\PlayLog\PlayLogQueryController;
+use App\Modules\PlayLog\PlayLogQueryRepository;
 use App\Modules\PlayLog\PlayLogRepository;
 use App\Modules\PlayLog\PlayLogService;
 use App\Modules\PlayLog\PlayLogValidator;
 
-/** @var Closure $define */
-$define = require __DIR__ . '/../ingest_module.php';
+/** @var callable(string, string, string, string, string): array<string,mixed> $defineIngest */
+$defineIngest = require __DIR__ . '/../ingest_module.php';
+/** @var callable(string, string, string): array<string,mixed> $defineQuery */
+$defineQuery = require __DIR__ . '/../query_module.php';
 
-return $define('playlog', PlayLogController::class, PlayLogService::class, PlayLogValidator::class, PlayLogRepository::class);
+return $defineIngest('playlog', PlayLogController::class, PlayLogService::class, PlayLogValidator::class, PlayLogRepository::class)
+    + $defineQuery('playlog', PlayLogQueryController::class, PlayLogQueryRepository::class);

@@ -4,7 +4,7 @@ garlic-analytics is a self-hosted analytics service for digital signage players.
 
 ## Components
 
-The project will consist of two components in one repository:
+The project will consist of two parts in one repository:
 
 - **API** (`api/`): accepts normalized events, writes them to ClickHouse and serves reports and aggregates. Not public. Reachable only by CMS instances and the collector.
 - **Collector** (`collector/`): public. Players upload their logs directly via WebDAV. The collector normalizes them using adapters and forwards them to the API.
@@ -43,7 +43,7 @@ CMS -> GET /v1/<module>/... (API) -> displays results, resolves IDs to names and
   - `2xx`: success
   - `4xx`: invalid data, the client must not retry unchanged
   - `5xx`: server problem, the client retries later
-- Read endpoints: fixed parameters, no free-form SQL, e.g. aggregated data of one player for a time range, paginated. Responses contain only IDs and numbers, no names.
+- Read endpoints: fixed parameters, no free-form SQL, e.g., aggregated data of one player for a time range, paginated. Responses contain only IDs and numbers, no names.
 - `GET /v1/health`: no authentication, also checks the ClickHouse connection.
 - Errors are returned as JSON with a matching HTTP status and a meaningful message.
 - The schema is defined by idempotent SQL files in `migrations/` (`CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`). A runner (`bin/console db:migrate`) first checks the connection and creates the database if it is missing, then executes all files in order on startup. New tables and columns therefore reach existing installations automatically.
@@ -78,7 +78,7 @@ The limits are set per module in `config/settings/config_<module>.ini` (`max_eve
 
 **`connectlog`:** there is no collector for this type, the CMS sends the connects to the API. The retention of 4 years is meant for the migration of the data of SmilControl. When it is done, it is set back to 3 months with a new migration file (`ALTER TABLE connect_log MODIFY TTL connected_at + INTERVAL 3 MONTH`, repeatable) and `max_age_days = 90`. The next merge then drops everything older.
 
-The sender of connects decides how to send them. One request with one entry works, but a sender with many players should collect the connects and send them together (a few seconds up to a minute) to spare ClickHouse many tiny inserts. ClickHouse `async_insert` is not used: it cannot be combined with the deduplication in the hourly table.
+The sender of connects decides how to send them. One request with one entry works, but a sender with many players should collect the connects and send them together (a few seconds up to a minute) to prevent ClickHouse from too many tiny inserts. ClickHouse `async_insert` is not used: it cannot be combined with the deduplication in the hourly table.
 
 ## Authentication
 
@@ -94,7 +94,7 @@ The sender of connects decides how to send them. One request with one entry work
 
 - Publicly reachable for players.
 - Accepts uploads via WebDAV or HTTP PUT and stores them in `inbox/`.
-- Normalization is done by adapters, one per player format. An adapter translates a source-specific format (e.g. the XML report of a specific player) into the event format.
+- Adapters do normalization, one per player format. An adapter translates a source-specific format (e.g., the XML report of a specific player) into the event format.
 - Sends normalized events to the API with its own API key (scope `ingest`).
 - The type of a file follows from its name (`LogType`: `playlog`, `event`, `system`) and decides the endpoint (`LogType::endpoint()`). Play logs (`/v1/playlog`), events (`/v1/eventlog`) and system reports (`/v1/systemlog`) are sent.
 - Every type has a record class (`RecordInterface`: `PlayLogRecord`, `EventLogRecord`) in the format of its endpoint. `IngestClientInterface::send(LogType, records)` and `DeviceAdapterInterface::parse(LogType, file)` work for all types, a new type does not need new methods.

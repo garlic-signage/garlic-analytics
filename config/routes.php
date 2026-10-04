@@ -25,6 +25,7 @@ use App\Modules\Auth\ApiKeyMiddleware;
 use App\Modules\ConnectLog\ConnectLogController;
 use App\Modules\EventLog\EventLogController;
 use App\Modules\PlayLog\PlayLogController;
+use App\Modules\PlayLog\PlayLogQueryController;
 use App\Modules\SystemLog\SystemLogController;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -43,6 +44,7 @@ return function (App $app): void
     $app->group('/v1', function (RouteCollectorProxy $group): void
     {
         $group->post('/playlog', [PlayLogController::class, 'ingest']);
+        $group->get('/playlog', [PlayLogQueryController::class, 'list']);
         $group->post('/eventlog', [EventLogController::class, 'ingest']);
         $group->post('/systemlog', [SystemLogController::class, 'ingest']);
         $group->post('/connectlog', [ConnectLogController::class, 'ingest']);

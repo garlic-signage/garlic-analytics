@@ -53,4 +53,15 @@ interface ClickHouseClientInterface
      * @throws JsonException a value can not be encoded as JSON (invalid UTF-8)
      */
     public function insert(string $table, array $rows, array $columns, ?string $deduplicationToken = null): void;
+
+    /**
+     * Runs a SELECT. Values go in as typed query parameters, never into the SQL string:
+     * the SQL has placeholders like {player_id:String} or {limit:UInt32}, $parameters holds
+     * their values by name.
+     *
+     * @param array<string,int|string> $parameters
+     * @return list<array<string,mixed>> the rows, the keys are the column names (or aliases)
+     * @throws DatabaseException
+     */
+    public function select(string $sql, array $parameters = []): array;
 }
