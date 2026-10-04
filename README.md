@@ -2,6 +2,7 @@
 
 [![PHPUnit](https://github.com/garlic-signage/garlic-analytics/actions/workflows/phpunit.yml/badge.svg?branch=main)](https://github.com/garlic-signage/garlic-analytics/actions/workflows/phpunit.yml)
 [![PHPStan](https://github.com/garlic-signage/garlic-analytics/actions/workflows/phpstan.yml/badge.svg?branch=main)](https://github.com/garlic-signage/garlic-analytics/actions/workflows/phpstan.yml)
+[![Integration](https://github.com/garlic-signage/garlic-analytics/actions/workflows/integration.yml/badge.svg?branch=main)](https://github.com/garlic-signage/garlic-analytics/actions/workflows/integration.yml)
 ![PHPStan Level](https://img.shields.io/badge/PHPStan-level%20max-brightgreen)
 
 Self-hosted analytics service for digital signage players. Collects logs, proof-of-play reports and connection events in ClickHouse and provides a REST API for CMS integration.
@@ -10,49 +11,62 @@ Part of the [GarlicSignage](https://github.com/garlic-signage) stack.
 
 ## Status
 
-Early development. The base is in place: configuration, error handling, tests and CI. Ingest and query endpoints are not implemented yet.
+Early development. Working today:
+
+- Ingest of play logs, player events, system reports and connects (`POST /v1/playlog`, `/eventlog`, `/systemlog`, `/connectlog`) into ClickHouse, with validation and idempotent retries
+- API key authentication with scopes (`ingest`, `read`)
+- Schema migrations (`bin/console db:migrate`)
+- Collector for SMIL player reports: normalizes uploaded files and sends them to the API
+
+Not there yet: the read endpoints (reports and aggregates). See [ROADMAP.md](ROADMAP.md).
 
 ## How it fits into the stack
 
 ```
-Player  --->  CMS (e.g. garlic-hub)  --->  garlic-analytics  --->  ClickHouse
-                      ^                          |
-                      +-------- queries ---------+
+CMS (e.g. garlic-hub)  --->  garlic-analytics API  --->  ClickHouse
+                                    ^
+Player files  --->  Collector  -----+
+                    (optional)
 ```
 
-Players never talk to garlic-analytics directly. The CMS collects their reports and logs, forwards them via REST and asks garlic-analytics for evaluations.
+There are two ways in, both end at the ingest API. The CMS also reads the results from the API.
 
-garlic-analytics is optional. It can run on the same machine as the CMS or on a different one.
+- The CMS collects the reports and logs of its players, normalizes them and sends them via REST.
+- The optional collector reads the files players uploaded, normalizes them with an adapter (currently SMIL) and sends them to the API like any other client.
+
+The API is not public and is reachable only for the CMS and the collector. garlic-analytics is optional. It can run on the same machine as the CMS or on a different one.
 
 ## Requirements
 
 - PHP 8.4
 - Composer
-- ClickHouse (not needed yet for development)
+- ClickHouse 25.8 or newer (for migrations, the integration tests and running the API)
+
+The repository contains a [DDEV](https://ddev.com) setup with PHP and ClickHouse, which is the easiest way to start.
 
 ## Getting started
 
 ```bash
 git clone https://github.com/garlic-signage/garlic-analytics.git
 cd garlic-analytics
-composer install
+ddev start
+ddev composer install
+cp .env.dist .env                 # at least APP_ENV=dev, APP_DEBUG=true and the CLICKHOUSE_* values
+ddev exec bin/console db:migrate
+ddev exec bin/console apikey:create my-cms --scope=ingest --scope=read
 ```
 
-Create a `.env` file in the project root:
-
-```
-APP_ENV=dev
-APP_DEBUG=true
-```
+The key is shown once. Without DDEV run the same commands directly and point the `CLICKHOUSE_*` settings of `.env` to your ClickHouse.
 
 Run the checks:
 
 ```bash
-vendor/bin/phpstan analyse
-vendor/bin/phpunit
+ddev exec vendor/bin/phpstan analyse
+ddev exec vendor/bin/phpunit
+ddev exec vendor/bin/phpunit -c phpunit.integration.xml   # needs ClickHouse
 ```
 
-Both must be green. The same two commands run on GitHub after every push.
+All three must be green. The same checks run on GitHub after every push. Details are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Documentation
 
