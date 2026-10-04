@@ -31,7 +31,8 @@
             "php": "8.4.24"
         },
         "allow-plugins": {
-            "phpstan/extension-installer": true
+            "phpstan/extension-installer": true,
+            "cyclonedx/cyclonedx-php-composer": true
         }
     },
     "require-dev": {
@@ -40,7 +41,8 @@
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpstan/phpstan-phpunit": "^2.0",
         "phpstan/extension-installer": "^1.4",
-        "deptrac/deptrac": "^4.7"
+        "deptrac/deptrac": "^4.7",
+        "cyclonedx/cyclonedx-php-composer": "^6.2"
     },
     "scripts": {
         "test": "phpunit",
