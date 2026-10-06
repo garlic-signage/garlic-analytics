@@ -82,6 +82,8 @@ Reading connects: `GET /v1/connectlog` sums the hourly aggregate `connect_hourly
 
 Reading the proof-of-play: `GET /v1/playlog/stats` answers for one player how often and how long each content was played in a time range (sorted by `content_id`, or by `plays` or `duration_s`), `GET /v1/playlog/stats/period` the plays per hour, day or month, optionally of one content. Both sum the hourly aggregate `play_hourly` up, which has no TTL, so they reach further back than the raw records of `play_log` (2 years). A play belongs to the hour it started in and is not split at an hour or day boundary. Days and months use `time_zone` like the connects.
 
+Groups of players: this service has no groups, the CMS owns them (names, members, changes). For the aggregates `POST /v1/playlog/stats/group`, `POST /v1/playlog/stats/group/period` and `POST /v1/connectlog/group` the CMS sends the player IDs in the JSON body, at most `max_players` (1000). They run the same queries as the endpoints of one player, with `player_id IN (...)` over the hourly tables (they are ordered by `player_id` first). The IDs are query parameters of ClickHouse, one placeholder per ID, never part of the SQL string.
+
 The sender of connects decides how to send them. One request with one entry works, but a sender with many players should collect the connects and send them together (a few seconds up to a minute) to prevent ClickHouse from too many tiny inserts. ClickHouse `async_insert` is not used: it cannot be combined with the deduplication in the hourly table.
 
 ## Authentication
@@ -89,7 +91,7 @@ The sender of connects decides how to send them. One request with one entry work
 - One API key per client, sent as `Authorization: Bearer <key>`. Never as a query parameter.
 - Keys are created by a CLI command with `bin2hex(random_bytes(32))` and shown only once. Only the SHA-256 hash is stored, together with the client name and its scopes. Comparison with `hash_equals()`.
 - The hashes are stored in a file in `var/keys/`, outside the docroot and outside the repository. Access goes through an interface, so the storage can be replaced later.
-- Scopes: `ingest` for writing, `read` for reading. The collector only gets `ingest`.
+- Scopes: `ingest` for writing, `read` for reading. The collector only gets `ingest`. The scope follows from the HTTP method. The only exception are the queries of a group of players: they are `POST` (the list of player IDs can be too long for a URL) and the route sets the scope `read` itself (route argument `scope`, read by `ApiKeyMiddleware`). A key for ingest cannot use them.
 - Missing or unknown key: `401`. Key without the required scope: `403`. `GET /v1/health` needs no key.
 - Keys are managed with `bin/console apikey:create|list|revoke`, see [cli.md](cli.md).
 - Apache only passes the `Authorization` header to PHP with `CGIPassAuth On` (set in `public/.htaccess`).

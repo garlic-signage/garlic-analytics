@@ -24,14 +24,19 @@ namespace App\Framework\Query;
 use DateTimeImmutable;
 
 /**
- * A validated query for the raw events of one player: a time range ($from included, $to excluded,
- * both UTC) and one page of the result. $filters are the optional, module specific conditions
+ * A validated query for the events of one player or of a group of players: a time range ($from included,
+ * $to excluded, both UTC) and one page of the result. $filters are the optional, module specific conditions
  * (name => value or list of values), empty if the client asked for none.
+ *
+ * A query of one player has its ID in $playerId and no $playerIds. A query of a group (the CMS sends the
+ * IDs of the players) has the IDs in $playerIds, without duplicates, and an empty $playerId. Only the
+ * endpoints that aggregate know groups, see PlayerCondition.
  */
 readonly class PageQuery
 {
     /**
      * @param array<string,string|list<string>> $filters
+     * @param list<string>                      $playerIds
      */
     public function __construct(
         public string            $playerId,
@@ -40,6 +45,7 @@ readonly class PageQuery
         public int               $limit,
         public int               $offset,
         public bool              $descending,
-        public array             $filters = []
+        public array             $filters = [],
+        public array             $playerIds = []
     ) {}
 }

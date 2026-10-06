@@ -23,6 +23,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use App\Modules\Auth\ApiKeyMiddleware;
 use App\Modules\ConnectLog\ConnectLogController;
+use App\Modules\ConnectLog\ConnectLogGroupController;
 use App\Modules\ConnectLog\ConnectLogQueryController;
 use App\Modules\ConnectLog\ConnectLogRawQueryController;
 use App\Modules\EventLog\EventLogController;
@@ -30,7 +31,9 @@ use App\Modules\EventLog\EventLogQueryController;
 use App\Modules\PlayLog\PlayLogController;
 use App\Modules\PlayLog\PlayLogQueryController;
 use App\Modules\PlayLog\PlayLogStatsController;
+use App\Modules\PlayLog\PlayLogStatsGroupController;
 use App\Modules\PlayLog\PlayLogStatsPeriodController;
+use App\Modules\PlayLog\PlayLogStatsPeriodGroupController;
 use App\Modules\SystemLog\SystemLogController;
 use App\Modules\SystemLog\SystemLogQueryController;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -53,6 +56,9 @@ return function (App $app): void
         $group->get('/playlog', [PlayLogQueryController::class, 'list']);
         $group->get('/playlog/stats', [PlayLogStatsController::class, 'list']);
         $group->get('/playlog/stats/period', [PlayLogStatsPeriodController::class, 'list']);
+        // the query of a group of players: a POST because the list of IDs can be too long for a URL, it only reads
+        $group->post('/playlog/stats/group', [PlayLogStatsGroupController::class, 'list'])->setArgument('scope', 'read');
+        $group->post('/playlog/stats/group/period', [PlayLogStatsPeriodGroupController::class, 'list'])->setArgument('scope', 'read');
         $group->post('/eventlog', [EventLogController::class, 'ingest']);
         $group->get('/eventlog', [EventLogQueryController::class, 'list']);
         $group->post('/systemlog', [SystemLogController::class, 'ingest']);
@@ -60,5 +66,6 @@ return function (App $app): void
         $group->post('/connectlog', [ConnectLogController::class, 'ingest']);
         $group->get('/connectlog', [ConnectLogQueryController::class, 'list']);
         $group->get('/connectlog/raw', [ConnectLogRawQueryController::class, 'list']);
+        $group->post('/connectlog/group', [ConnectLogGroupController::class, 'list'])->setArgument('scope', 'read');
     })->add(ApiKeyMiddleware::class);
 };

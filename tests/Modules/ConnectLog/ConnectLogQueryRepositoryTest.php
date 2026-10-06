@@ -118,4 +118,25 @@ class ConnectLogQueryRepositoryTest extends TestCase
 
         static::assertSame([], new ConnectLogQueryRepository($client)->find($query));
     }
+
+    #[Group('units')]
+    public function testAGroupIsAnInListWithPlaceholdersAndTheIdsAsParameters(): void
+    {
+        $client = $this->createMock(ClickHouseClientInterface::class);
+        $client->expects($this->exactly(2))->method('select')->with(
+            static::logicalAnd(
+                static::stringContains('player_id IN ({player_0:String}, {player_1:String})'),
+                static::stringContains('GROUP BY period'),
+                static::logicalNot(static::stringContains('player_id = ')),
+                static::logicalNot(static::stringContains("a'1"))
+            ),
+            static::callback(static fn(array $parameters): bool => $parameters['player_0'] === "a'1" && $parameters['player_1'] === 'b' && !array_key_exists('player_id', $parameters))
+        )->willReturn([['total' => 0]]);
+
+        $query = new PageQuery('', new DateTimeImmutable('2026-10-01T00:00:00Z'), new DateTimeImmutable('2026-10-02T00:00:00Z'), 50, 0, true, ['resolution' => 'hour', 'time_zone' => 'UTC'], ["a'1", 'b']);
+
+        $repository = new ConnectLogQueryRepository($client);
+        $repository->count($query);
+        $repository->find($query);
+    }
 }

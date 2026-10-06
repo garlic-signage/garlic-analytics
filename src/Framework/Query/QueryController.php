@@ -44,10 +44,21 @@ abstract readonly class QueryController
      */
     public function list(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $page = $this->service->query($request->getQueryParams());
+        $page = $this->service->query($this->parameters($request));
 
         $response->getBody()->write(json_encode($page->toArray(), JSON_THROW_ON_ERROR));
 
         return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    /**
+     * The parameters of the query: the query string, a group controller reads the body instead.
+     *
+     * @return array<array-key,mixed>
+     * @throws ValidationException
+     */
+    protected function parameters(ServerRequestInterface $request): array
+    {
+        return $request->getQueryParams();
     }
 }

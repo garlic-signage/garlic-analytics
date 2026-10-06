@@ -171,4 +171,39 @@ class PlayLogStatsRepositoryTest extends TestCase
 
         static::assertSame(12, new PlayLogStatsPeriodRepository($client)->count($this->query(['resolution' => 'month', 'time_zone' => 'UTC'])));
     }
+
+    #[Group('units')]
+    public function testAGroupIsAnInListWithPlaceholdersAndTheIdsAsParameters(): void
+    {
+        $client = $this->createMock(ClickHouseClientInterface::class);
+        $client->expects($this->exactly(2))->method('select')->with(
+            static::logicalAnd(
+                static::stringContains('player_id IN ({player_0:String}, {player_1:String})'),
+                static::stringContains('GROUP BY'),
+                static::logicalNot(static::stringContains('player_id = ')),
+                static::logicalNot(static::stringContains("a'1"))
+            ),
+            static::callback(static fn(array $parameters): bool => $parameters['player_0'] === "a'1" && $parameters['player_1'] === 'b' && !array_key_exists('player_id', $parameters))
+        )->willReturn([['total' => 0]]);
+
+        $query = new PageQuery('', new DateTimeImmutable('2026-10-01T00:00:00Z'), new DateTimeImmutable('2026-10-02T00:00:00Z'), 50, 0, false, ['sort' => 'content_id'], ["a'1", 'b']);
+
+        $repository = new PlayLogStatsRepository($client);
+        $repository->count($query);
+        $repository->find($query);
+    }
+
+    #[Group('units')]
+    public function testPeriodStatisticsOfAGroupUseTheSameCondition(): void
+    {
+        $client = $this->createMock(ClickHouseClientInterface::class);
+        $client->expects($this->once())->method('select')->with(
+            static::logicalAnd(static::stringContains('player_id IN ({player_0:String}, {player_1:String})'), static::stringContains('toUnixTimestamp(hour) AS period')),
+            ['player_0' => 'a', 'player_1' => 'b', 'from' => 1790812800, 'to' => 1790899200, 'limit' => 50, 'offset' => 0]
+        )->willReturn([]);
+
+        $query = new PageQuery('', new DateTimeImmutable('2026-10-01T00:00:00Z'), new DateTimeImmutable('2026-10-02T00:00:00Z'), 50, 0, true, [], ['a', 'b']);
+
+        static::assertSame([], new PlayLogStatsPeriodRepository($client)->find($query));
+    }
 }

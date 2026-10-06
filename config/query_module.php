@@ -40,10 +40,12 @@ use Psr\Container\ContainerInterface;
  * A module with optional filter parameters passes the class of its FilterValidatorInterface as fourth argument.
  * The fifth argument is the key in the settings file with the maximum range of from to to in hours (no limit if null).
  * The sixth argument is false if the default order of the module is ascending.
+ * The seventh argument is true for the query of a group of players (the controller is a GroupQueryController): the
+ * players come in the body, at most max_players of the settings file.
  *
- * @return Closure(string, class-string<QueryController>, class-string<QueryRepositoryInterface>, class-string<FilterValidatorInterface>|null=, string|null=, bool=): array<string,mixed>
+ * @return Closure(string, class-string<QueryController>, class-string<QueryRepositoryInterface>, class-string<FilterValidatorInterface>|null=, string|null=, bool=, bool=): array<string,mixed>
  */
-return function (string $module, string $controller, string $repository, ?string $filterValidator = null, ?string $maxRangeKey = null, bool $defaultDescending = true): array
+return function (string $module, string $controller, string $repository, ?string $filterValidator = null, ?string $maxRangeKey = null, bool $defaultDescending = true, bool $group = false): array
 {
     $dependencies = [];
 
@@ -55,7 +57,7 @@ return function (string $module, string $controller, string $repository, ?string
         return new $repository($client);
     });
 
-    $dependencies[$controller] = DI\factory(function (ContainerInterface $container) use ($module, $controller, $repository, $filterValidator, $maxRangeKey, $defaultDescending)
+    $dependencies[$controller] = DI\factory(function (ContainerInterface $container) use ($module, $controller, $repository, $filterValidator, $maxRangeKey, $defaultDescending, $group)
     {
         /** @var Config $config */
         $config = $container->get(Config::class);
@@ -71,7 +73,8 @@ return function (string $module, string $controller, string $repository, ?string
             (int) $config->getConfigValue('max_limit', $module),
             $filters,
             $maxRangeKey === null ? null : (int) $config->getConfigValue($maxRangeKey, $module) * 3600,
-            $defaultDescending
+            $defaultDescending,
+            $group ? (int) $config->getConfigValue('max_players', $module) : null
         );
 
         return new $controller(new QueryService($validator, $repositoryInstance));

@@ -34,6 +34,8 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Slim\Exception\HttpForbiddenException;
 use Slim\Exception\HttpUnauthorizedException;
+use Slim\Interfaces\RouteInterface;
+use Slim\Routing\RouteContext;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Psr7\Factory\ServerRequestFactory;
 
@@ -137,6 +139,79 @@ class ApiKeyMiddlewareTest extends TestCase
             static::assertSame(403, $e->getCode());
             static::assertNull($this->handler->handled);
         }
+    }
+
+    /**
+     * A key with the given scopes is the "valid-key" of a middleware of its own.
+     *
+     * @param list<Scope> $scopes
+     */
+    private function middlewareOfAKeyWith(array $scopes): ApiKeyMiddleware
+    {
+        $client = new ApiClient('client', $scopes);
+        $store  = static::createStub(ApiKeyStoreInterface::class);
+        $store->method('findByKeyHash')
+            ->willReturnCallback(fn(string $hash) => hash_equals(hash('sha256', 'valid-key'), $hash) ? $client : null);
+
+        return new ApiKeyMiddleware($store, new Crypt());
+    }
+
+    private function routeWithScope(?string $scope): RouteInterface
+    {
+        $route = static::createStub(RouteInterface::class);
+        $route->method('getArgument')->willReturnCallback(static fn(string $name): ?string => $name === 'scope' ? $scope : null);
+
+        return $route;
+    }
+
+    /**
+     * @throws CoreException
+     */
+    #[Group('units')]
+    public function testARouteCanRequireReadForAPost(): void
+    {
+        $request = $this->request('POST', 'Bearer valid-key')->withAttribute(RouteContext::ROUTE, $this->routeWithScope('read'));
+
+        static::assertSame(204, $this->middlewareOfAKeyWith([Scope::Read])->process($request, $this->handler)->getStatusCode());
+    }
+
+    /**
+     * @throws CoreException
+     */
+    #[Group('units')]
+    public function testARouteThatRequiresReadIsForbiddenForAKeyThatCanOnlyIngest(): void
+    {
+        $request = $this->request('POST', 'Bearer valid-key')->withAttribute(RouteContext::ROUTE, $this->routeWithScope('read'));
+
+        $this->expectException(HttpForbiddenException::class);
+        $this->expectExceptionMessage('API key has no scope "read".');
+        $this->middlewareOfAKeyWith([Scope::Ingest])->process($request, $this->handler);
+    }
+
+    /**
+     * @throws CoreException
+     */
+    #[Group('units')]
+    public function testARouteWithoutAScopeFollowsTheMethod(): void
+    {
+        $post = $this->request('POST', 'Bearer valid-key')->withAttribute(RouteContext::ROUTE, $this->routeWithScope(null));
+
+        static::assertSame(204, $this->middlewareOfAKeyWith([Scope::Ingest])->process($post, $this->handler)->getStatusCode());
+
+        $this->expectException(HttpForbiddenException::class);
+        $this->middlewareOfAKeyWith([Scope::Read])->process($post, $this->handler);
+    }
+
+    /**
+     * @throws CoreException
+     */
+    #[Group('units')]
+    public function testAnUnknownScopeOfARouteIsAMistakeAndNeverAWeakerScope(): void
+    {
+        $request = $this->request('POST', 'Bearer valid-key')->withAttribute(RouteContext::ROUTE, $this->routeWithScope('everything'));
+
+        $this->expectException(\ValueError::class);
+        $this->middlewareOfAKeyWith([Scope::Read, Scope::Ingest])->process($request, $this->handler);
     }
 
     private function request(string $method, ?string $authorization): ServerRequestInterface

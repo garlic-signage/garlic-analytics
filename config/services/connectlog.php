@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 use App\Framework\Query\PeriodFilterValidator;
 use App\Modules\ConnectLog\ConnectLogController;
+use App\Modules\ConnectLog\ConnectLogGroupController;
 use App\Modules\ConnectLog\ConnectLogQueryController;
 use App\Modules\ConnectLog\ConnectLogQueryRepository;
 use App\Modules\ConnectLog\ConnectLogRawQueryController;
@@ -31,9 +32,10 @@ use App\Modules\ConnectLog\ConnectLogValidator;
 
 /** @var Closure(string, string, string, string, string): array<string,mixed> $defineIngest */
 $defineIngest = require __DIR__ . '/../ingest_module.php';
-/** @var Closure(string, string, string, string|null=, string|null=): array<string,mixed> $defineQuery */
+/** @var Closure(string, string, string, string|null=, string|null=, bool=, bool=): array<string,mixed> $defineQuery */
 $defineQuery  = require __DIR__ . '/../query_module.php';
 
 return $defineIngest('connectlog', ConnectLogController::class, ConnectLogService::class, ConnectLogValidator::class, ConnectLogRepository::class)
     + $defineQuery('connectlog', ConnectLogQueryController::class, ConnectLogQueryRepository::class, PeriodFilterValidator::class)
-    + $defineQuery('connectlog', ConnectLogRawQueryController::class, ConnectLogRawQueryRepository::class, null, 'max_raw_range_hours');
+    + $defineQuery('connectlog', ConnectLogRawQueryController::class, ConnectLogRawQueryRepository::class, null, 'max_raw_range_hours')
+    + $defineQuery('connectlog', ConnectLogGroupController::class, ConnectLogQueryRepository::class, PeriodFilterValidator::class, null, true, true);

@@ -10,13 +10,16 @@ info:
     Non-public REST API of garlic-analytics, the analytics service of the GarlicSignage stack.
     It is reachable only for CMS instances and the collector.
 
-    The ingest endpoints and the reading of the raw play logs exist. Further read endpoints are added with their modules.
+    The ingest endpoints, the reading of the raw records and the statistics (also for a group of players) exist.
 
     ## Authentication
 
     Every endpoint under `/v1` except `/v1/health` needs an API key, sent as
     `Authorization: Bearer <key>`. Never as a query parameter. The scope follows from the HTTP method:
-    `POST` needs `ingest`, `GET` needs `read`. A missing or unknown key gives `401`, a key without the scope gives `403`.
+    `POST` needs `ingest`, `GET` needs `read`. The only exception are the queries of a group of players
+    (`POST /v1/playlog/stats/group`, `/v1/playlog/stats/group/period` and `/v1/connectlog/group`): they only read, but
+    the list of players can be too long for a URL, so they are `POST` and need `read`. A missing or unknown key
+    gives `401`, a key without the scope gives `403`.
     Keys are managed with `bin/console apikey:create|list|revoke`.
 
     ## Ingest
@@ -345,6 +348,127 @@ paths:
                     duration_s: 4120
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+  /v1/playlog/stats/group:
+    post:
+      tags: [PlayLog]
+      summary: How often and how long a group of players played each content
+      description: |
+        The proof-of-play of a group: one entry per content that at least one player of the group played in the time
+        range, with the number of plays and their total duration over all players of the group.
+
+        The CMS knows its groups of players, this service does not: the CMS sends the IDs of the players of the
+        group in `player_ids` with every query. At most `max_players` IDs (1000, set in the settings file of the
+        module), duplicates are counted once, an unknown ID is not an error (it has no data). The IDs are in the
+        body because the list can be too long for a URL. This is a query: nothing is stored, it needs the scope
+        `read` and no key for ingest can use it. The other parameters are the ones of the query of one player,
+        sent as JSON (`limit` and `offset` as integers, numbers as strings are accepted too).
+
+        Everything else is as in `GET /v1/playlog/stats`: it reads the hourly aggregate `play_hourly` (kept without
+        limit), a play belongs to the hour it started in, an hour counts for the range if it starts at `from` or later
+        and before `to`, the default order is by `content_id` ascending, `sort=plays` with `order=desc` gives the most
+        played content first.
+      operationId: listPlayLogStatsGroup
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ContentEncoding'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayLogStatsGroupRequest'
+            example:
+              player_ids: [player-1, player-2, player-3]
+              from: '2026-10-01T00:00:00+02:00'
+              to: '2026-11-01T00:00:00+01:00'
+              sort: plays
+              order: desc
+              limit: 50
+      responses:
+        '200':
+          description: One page of the answer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayLogStatsPage'
+              example:
+                total: 2
+                limit: 50
+                offset: 0
+                items:
+                  - content_id: spot-1
+                    plays: 4314
+                    duration_s: 43140
+                  - content_id: spot-2
+                    plays: 936
+                    duration_s: 14040
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedEncoding' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+  /v1/playlog/stats/group/period:
+    post:
+      tags: [PlayLog]
+      summary: The plays of a group of players per hour, day or month
+      description: |
+        The plays of a group as a time series, per hour, day or month, with the number of plays and their total
+        duration over all players of the group, optionally only of one content.
+
+        The CMS knows its groups of players, this service does not: the CMS sends the IDs of the players of the
+        group in `player_ids` with every query. At most `max_players` IDs (1000, set in the settings file of the
+        module), duplicates are counted once, an unknown ID is not an error (it has no data). The IDs are in the
+        body because the list can be too long for a URL. This is a query: nothing is stored, it needs the scope
+        `read` and no key for ingest can use it. The other parameters are the ones of the query of one player,
+        sent as JSON (`limit` and `offset` as integers, numbers as strings are accepted too).
+
+        Everything else is as in `GET /v1/playlog/stats/period`: `resolution` and `time_zone` define the periods (the
+        days and months are those of the time zone, `hour` is UTC), periods without a play are not in the answer, the
+        order follows `period`, newest first by default.
+      operationId: listPlayLogStatsGroupPeriod
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ContentEncoding'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayLogStatsPeriodGroupRequest'
+            example:
+              player_ids: [player-1, player-2, player-3]
+              from: '2026-10-01T00:00:00+02:00'
+              to: '2026-11-01T00:00:00+01:00'
+              resolution: day
+              time_zone: Europe/Berlin
+      responses:
+        '200':
+          description: One page of the answer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayLogStatsPeriodPage'
+              example:
+                total: 31
+                limit: 100
+                offset: 0
+                items:
+                  - period: '2026-10-31'
+                    plays: 412
+                    duration_s: 4120
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedEncoding' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
         '500': { $ref: '#/components/responses/ServerError' }
 
@@ -789,6 +913,65 @@ paths:
         '422': { $ref: '#/components/responses/ValidationFailed' }
         '500': { $ref: '#/components/responses/ServerError' }
 
+  /v1/connectlog/group:
+    post:
+      tags: [ConnectLog]
+      summary: The connects of a group of players per hour, day or month
+      description: |
+        The connects of a group, summed up per hour, day or month over all players of the group, from the hourly
+        aggregate `connect_hourly`.
+
+        The CMS knows its groups of players, this service does not: the CMS sends the IDs of the players of the
+        group in `player_ids` with every query. At most `max_players` IDs (1000, set in the settings file of the
+        module), duplicates are counted once, an unknown ID is not an error (it has no data). The IDs are in the
+        body because the list can be too long for a URL. This is a query: nothing is stored, it needs the scope
+        `read` and no key for ingest can use it. The other parameters are the ones of the query of one player,
+        sent as JSON (`limit` and `offset` as integers, numbers as strings are accepted too).
+
+        Everything else is as in `GET /v1/connectlog`: `resolution` and `time_zone` define the periods, periods without
+        a connect are not in the answer, the order follows `period`, newest first by default. `connects` and
+        `covered_s` are the sums over the players: for a group of 10 players that connect every minute, one hour has
+        up to 600 `connects` and 36000 `covered_s`.
+      operationId: listConnectLogGroup
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ContentEncoding'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectLogGroupRequest'
+            example:
+              player_ids: [player-1, player-2, player-3]
+              from: '2026-10-01T00:00:00+02:00'
+              to: '2026-11-01T00:00:00+01:00'
+              resolution: day
+              time_zone: Europe/Berlin
+      responses:
+        '200':
+          description: One page of the answer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectLogPage'
+              example:
+                total: 31
+                limit: 100
+                offset: 0
+                items:
+                  - period: '2026-10-31'
+                    connects: 4290
+                    covered_s: 257400
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedEncoding' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
 components:
   parameters:
     ContentEncoding:
@@ -876,7 +1059,7 @@ components:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
     Forbidden:
-      description: The API key does not have the scope the endpoint needs (`ingest` for `POST`, `read` for `GET`).
+      description: The API key does not have the scope the endpoint needs (`ingest` for `POST`, `read` for `GET` and for the queries of a group of players).
       content:
         application/json:
           schema:
@@ -1341,6 +1524,124 @@ components:
           type: integer
           minimum: 1
           description: Refresh interval of the player in seconds, the time the connect covers.
+
+    PlayerIds:
+      type: array
+      minItems: 1
+      maxItems: 1000
+      description: |
+        The IDs of the players of a group. The CMS knows its groups, this service does not. At most `max_players`
+        (set in the settings file of the module, 1000 by default). Duplicates are counted once.
+      items:
+        $ref: '#/components/schemas/PlayerId'
+
+    PlayLogStatsGroupRequest:
+      type: object
+      required: [player_ids, from, to]
+      description: The parameters of `GET /v1/playlog/stats` for a group of players.
+      properties:
+        player_ids:
+          $ref: '#/components/schemas/PlayerIds'
+        from:
+          $ref: '#/components/schemas/Timestamp'
+        to:
+          $ref: '#/components/schemas/Timestamp'
+        content_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: Only this content, exact match (case sensitive).
+        sort:
+          type: string
+          enum: [content_id, plays, duration_s]
+          default: content_id
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 100
+        offset:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          default: 0
+        order:
+          type: string
+          enum: [asc, desc]
+          default: asc
+
+    PlayLogStatsPeriodGroupRequest:
+      type: object
+      required: [player_ids, from, to]
+      description: The parameters of `GET /v1/playlog/stats/period` for a group of players.
+      properties:
+        player_ids:
+          $ref: '#/components/schemas/PlayerIds'
+        from:
+          $ref: '#/components/schemas/Timestamp'
+        to:
+          $ref: '#/components/schemas/Timestamp'
+        resolution:
+          type: string
+          enum: [hour, day, month]
+          default: hour
+        time_zone:
+          type: string
+          default: UTC
+          description: Name of the time zone (IANA, e.g. `Europe/Berlin`) that defines the days and months. No effect for `hour`.
+        content_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: Only the plays of this content, exact match (case sensitive).
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 100
+        offset:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          default: 0
+        order:
+          type: string
+          enum: [asc, desc]
+          default: desc
+
+    ConnectLogGroupRequest:
+      type: object
+      required: [player_ids, from, to]
+      description: The parameters of `GET /v1/connectlog` for a group of players.
+      properties:
+        player_ids:
+          $ref: '#/components/schemas/PlayerIds'
+        from:
+          $ref: '#/components/schemas/Timestamp'
+        to:
+          $ref: '#/components/schemas/Timestamp'
+        resolution:
+          type: string
+          enum: [hour, day, month]
+          default: hour
+        time_zone:
+          type: string
+          default: UTC
+          description: Name of the time zone (IANA, e.g. `Europe/Berlin`) that defines the days and months. No effect for `hour`.
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 100
+        offset:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          default: 0
+        order:
+          type: string
+          enum: [asc, desc]
+          default: desc
 
     ConnectLogRequest:
       type: object

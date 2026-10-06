@@ -32,7 +32,7 @@ Read the other event types.
 - Raw events of a player in a time range, paginated, optionally filtered by severity (`min_type`, `event_type`), source and name: `GET /v1/eventlog` (done)
 - Raw system reports of a player in a time range, paginated: `GET /v1/systemlog` (done)
 - Connects of a player per hour, day or month in the time zone of the CMS, from `connect_hourly`: `GET /v1/connectlog` (done), raw connects for one day: `GET /v1/connectlog/raw` (done)
-- Aggregation by player group
+- Aggregation by player group: the CMS sends the IDs of the players, for the play statistics and the connects (done)
 - Set the retention of `connect_log` back to 3 months when the migration of SmilControl is done
 
 ## 0.4 Collector service

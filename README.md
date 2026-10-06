@@ -18,6 +18,7 @@ Early development. Working today:
 - Reading of the raw play logs, events and system reports of a player in a time range, paginated (`GET /v1/playlog`, `GET /v1/eventlog`, `GET /v1/systemlog`), the events optionally filtered by severity, source and name
 - Proof-of-play statistics of a player from the hourly aggregate: how often and how long each content was played (`GET /v1/playlog/stats`) and the plays per hour, day or month (`GET /v1/playlog/stats/period`)
 - Reading of the connects of a player per hour, day (in the time zone of the CMS) or month from the hourly aggregate (`GET /v1/connectlog`) and as raw records for one day (`GET /v1/connectlog/raw`)
+- The same statistics for a group of players, the CMS sends the player IDs (`POST /v1/playlog/stats/group`, `/v1/playlog/stats/group/period`, `/v1/connectlog/group`)
 - Schema migrations (`bin/console db:migrate`)
 - Collector for SMIL player reports: normalizes uploaded files and sends them to the API
 

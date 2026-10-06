@@ -23,11 +23,12 @@ namespace App\Modules\PlayLog;
 
 use App\Framework\Database\ClickHouseClientInterface;
 use App\Framework\Query\PageQuery;
+use App\Framework\Query\PlayerCondition;
 use App\Framework\Query\QueryRepositoryInterface;
 
 /**
- * Base of the repositories that read the hourly aggregate play_hourly of one player: the condition of the
- * player, the range and the optional content_id, and its parameters. The aggregate is a SummingMergeTree,
+ * Base of the repositories that read the hourly aggregate play_hourly of one player or of a group of players:
+ * the condition of the players, the range and the optional content_id, and its parameters. The aggregate is a SummingMergeTree,
  * so the queries of the subclasses use sum() and GROUP BY.
  *
  * An hour counts for the range if it starts at from or later and before to. A play belongs to the hour it
@@ -35,19 +36,18 @@ use App\Framework\Query\QueryRepositoryInterface;
  */
 abstract readonly class PlayHourlyRepository implements QueryRepositoryInterface
 {
-    private const string FILTER = "player_id = {player_id:String}
-        AND hour >= toDateTime({from:UInt32}, 'UTC')
+    private const string RANGE = "hour >= toDateTime({from:UInt32}, 'UTC')
         AND hour < toDateTime({to:UInt32}, 'UTC')";
 
     public function __construct(protected ClickHouseClientInterface $client) {}
 
     /**
-     * The condition of the player, the range and the content_id of the client. Only placeholders, the values
+     * The condition of the players, the range and the content_id of the client. Only placeholders, the values
      * are in parameters().
      */
     protected function where(PageQuery $query): string
     {
-        return self::FILTER . (isset($query->filters['content_id']) ? ' AND content_id = {content_id:String}' : '');
+        return PlayerCondition::sql($query) . ' AND ' . self::RANGE . (isset($query->filters['content_id']) ? ' AND content_id = {content_id:String}' : '');
     }
 
     /**
@@ -56,9 +56,9 @@ abstract readonly class PlayHourlyRepository implements QueryRepositoryInterface
     protected function parameters(PageQuery $query): array
     {
         $parameters = [
-            'player_id' => $query->playerId,
-            'from'      => $query->from->getTimestamp(),
-            'to'        => $query->to->getTimestamp(),
+            ...PlayerCondition::parameters($query),
+            'from' => $query->from->getTimestamp(),
+            'to'   => $query->to->getTimestamp(),
         ];
 
         $contentId = $query->filters['content_id'] ?? null;

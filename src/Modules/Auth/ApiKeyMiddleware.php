@@ -29,12 +29,15 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Slim\Exception\HttpForbiddenException;
 use Slim\Exception\HttpUnauthorizedException;
+use Slim\Interfaces\RouteInterface;
+use Slim\Routing\RouteContext;
 
 /**
  * Checks the API key sent as "Authorization: Bearer <key>".
  *
  * Added to the /v1 route group, /v1/health stays outside of it.
- * The required scope follows from the HTTP method (see Scope::forMethod).
+ * The required scope follows from the HTTP method (see Scope::forMethod). A route can set it itself with the
+ * route argument "scope" (->setArgument('scope', 'read')), for a POST that only reads (the query of a group of players).
  *
  * - missing or unknown key: 401
  * - key without the required scope: 403
@@ -64,11 +67,23 @@ readonly class ApiKeyMiddleware implements MiddlewareInterface
         if ($client === null)
             throw new HttpUnauthorizedException($request, 'Invalid API key.');
 
-        $scope = Scope::forMethod($request->getMethod());
+        $scope = $this->requiredScope($request);
         if (!$client->hasScope($scope))
             throw new HttpForbiddenException($request, 'API key has no scope "' . $scope->value . '".');
 
         return $handler->handle($request->withAttribute(self::ATTRIBUTE_CLIENT, $client));
+    }
+
+    /**
+     * The scope of the route if it sets one, otherwise the one of the HTTP method. A scope the route names but
+     * Scope does not know is a mistake in the routes (ValueError, answered as 500), never a fall back to a weaker scope.
+     */
+    private function requiredScope(ServerRequestInterface $request): Scope
+    {
+        $route    = $request->getAttribute(RouteContext::ROUTE);
+        $argument = $route instanceof RouteInterface ? $route->getArgument('scope') : null;
+
+        return $argument === null ? Scope::forMethod($request->getMethod()) : Scope::from($argument);
     }
 
     private function extractBearerToken(ServerRequestInterface $request): ?string

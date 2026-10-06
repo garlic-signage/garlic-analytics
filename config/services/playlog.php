@@ -24,8 +24,10 @@ use App\Modules\PlayLog\PlayLogQueryController;
 use App\Modules\PlayLog\PlayLogQueryRepository;
 use App\Modules\PlayLog\PlayLogRepository;
 use App\Modules\PlayLog\PlayLogStatsController;
+use App\Modules\PlayLog\PlayLogStatsGroupController;
 use App\Modules\PlayLog\PlayLogStatsFilterValidator;
 use App\Modules\PlayLog\PlayLogStatsPeriodController;
+use App\Modules\PlayLog\PlayLogStatsPeriodGroupController;
 use App\Modules\PlayLog\PlayLogStatsPeriodFilterValidator;
 use App\Modules\PlayLog\PlayLogStatsPeriodRepository;
 use App\Modules\PlayLog\PlayLogStatsRepository;
@@ -34,10 +36,12 @@ use App\Modules\PlayLog\PlayLogValidator;
 
 /** @var callable(string, string, string, string, string): array<string,mixed> $defineIngest */
 $defineIngest = require __DIR__ . '/../ingest_module.php';
-/** @var callable(string, string, string, string|null=, string|null=, bool=): array<string,mixed> $defineQuery */
+/** @var callable(string, string, string, string|null=, string|null=, bool=, bool=): array<string,mixed> $defineQuery */
 $defineQuery = require __DIR__ . '/../query_module.php';
 
 return $defineIngest('playlog', PlayLogController::class, PlayLogService::class, PlayLogValidator::class, PlayLogRepository::class)
     + $defineQuery('playlog', PlayLogQueryController::class, PlayLogQueryRepository::class)
     + $defineQuery('playlog', PlayLogStatsController::class, PlayLogStatsRepository::class, PlayLogStatsFilterValidator::class, null, false)
-    + $defineQuery('playlog', PlayLogStatsPeriodController::class, PlayLogStatsPeriodRepository::class, PlayLogStatsPeriodFilterValidator::class);
+    + $defineQuery('playlog', PlayLogStatsPeriodController::class, PlayLogStatsPeriodRepository::class, PlayLogStatsPeriodFilterValidator::class)
+    + $defineQuery('playlog', PlayLogStatsGroupController::class, PlayLogStatsRepository::class, PlayLogStatsFilterValidator::class, null, false, true)
+    + $defineQuery('playlog', PlayLogStatsPeriodGroupController::class, PlayLogStatsPeriodRepository::class, PlayLogStatsPeriodFilterValidator::class, null, true, true);
