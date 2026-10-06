@@ -16,24 +16,27 @@ The foundation: accept normalized events and store them safely.
 - OpenAPI description of the ingest API (`docs/openapi.yaml`)
 - Gzip request bodies and a size limit for request bodies
 
-## 0.2 Reports
+## 0.2 Reports (done)
 
 Make the collected data usable.
 
-- Raw play logs of a player in a time range, paginated: `GET /v1/playlog` (done)
-- Aggregated proof-of-play of a player: plays and duration per content (`GET /v1/playlog/stats`) and per hour, day or month (`GET /v1/playlog/stats/period`) (done)
-- Time zone aware queries based on hourly aggregates (done for the connects and the proof-of-play)
-- Every new read endpoint described in `docs/openapi.yaml`
+- Raw play logs of a player in a time range, paginated: `GET /v1/playlog`
+- Aggregated proof-of-play of a player: plays and duration per content (`GET /v1/playlog/stats`) and per hour, day or month (`GET /v1/playlog/stats/period`), from `play_hourly`
+- Time zone aware queries based on the hourly aggregates, for the proof-of-play and the connects
+- Every read endpoint described in `docs/openapi.yaml`
 
-## 0.3 More aggregates
+## 0.3 More aggregates (done)
 
-Read the other event types.
+Read the other event types and aggregate for groups of players.
 
-- Raw events of a player in a time range, paginated, optionally filtered by severity (`min_type`, `event_type`), source and name: `GET /v1/eventlog` (done)
-- Raw system reports of a player in a time range, paginated: `GET /v1/systemlog` (done)
-- Connects of a player per hour, day or month in the time zone of the CMS, from `connect_hourly`: `GET /v1/connectlog` (done), raw connects for one day: `GET /v1/connectlog/raw` (done)
-- Aggregation by player group: the CMS sends the IDs of the players, for the play statistics and the connects (done)
-- Set the retention of `connect_log` back to 3 months when the migration of SmilControl is done
+- Raw events of a player in a time range, paginated, optionally filtered by severity (`min_type`, `event_type`), source and name: `GET /v1/eventlog`
+- Raw system reports of a player in a time range, paginated: `GET /v1/systemlog`
+- Connects of a player per hour, day or month in the time zone of the CMS, from `connect_hourly`: `GET /v1/connectlog`, raw connects for one day: `GET /v1/connectlog/raw`
+- Aggregation by player group: the CMS owns the groups and sends the player IDs (at most 1000) in the body of a `POST`, for the play statistics and the connects (`POST /v1/playlog/stats/group`, `/v1/playlog/stats/group/period`, `/v1/connectlog/group`). The route sets the scope `read`.
+
+Open, depends on something outside of the code:
+
+- Set the retention of `connect_log` back to 3 months when the migration of SmilControl is done (new migration file and `max_age_days` in `config_connectlog.ini`)
 
 ## 0.4 Collector service
 
@@ -53,27 +56,32 @@ Ideas without a fixed release yet.
 
 ## Upload access for players
 
-Planned for 0.4, not decided yet. Players upload with HTTP Basic Auth over HTTPS. The CMS administers who may upload, analytics enforces it.
+Planned for 0.4. Not urgent: until then the CMS selects the players itself and sends the data to the API, no player uploads directly.
 
-**Idea**
+**Decision**
 
-- One credential per player (the player ID plus a random password), never a shared one. If an SMIL index leaks, only uploads for that one player are affected and the credential can be revoked alone.
-- A credential only allows writing (`PUT`) into the own directory, no reading or listing.
-- The player ID comes from the authenticated user, never from the content of the file. Otherwise a valid player could report data for another player.
-- The password is shown once on creation, analytics stores only a hash (like API keys). If the CMS loses it, the credential is rotated.
+- The CMS owns a list of the player UUIDs that may upload, analytics enforces it. Anyone can upload, the list decides what is accepted. No tokens, no rotating passwords, no directories per player.
+- The player UUID is unique and random, so it cannot be guessed. It is not authentication, whoever knows a listed UUID can submit data for it. This is accepted.
 
-**API (new module `Uploader`, own scope e.g. `manage`)**
+**Checks**
 
-- `PUT /v1/uploaders/{player_id}`: create or rotate, returns the password once
-- `DELETE /v1/uploaders/{player_id}`: revoke
-- `GET /v1/uploaders`: list the allowed players, without passwords
-- CLI: `bin/console player:add|list|remove` for the same, like `apikey:*`
+1. At the door (optional, cheap): the player sends its UUID in the `User-Agent`. The web server looks it up in the list and refuses unknown ones before anything is stored (Apache: `RewriteMap` on a text file, read on every request; nginx: `map`, needs a reload). The `User-Agent` can be set by anyone, so this only keeps out bots and strangers, it is no proof of identity.
+2. In the collector (always): the UUID in `<player id="...">` must be on the list. If not, the whole file goes to `error/`, like any broken file.
+
+**Protection of the server**
+
+- Size limit per upload and rate limit per IP at the web server, so nobody can fill the disk. This is the most important one, the upload is open.
+- `error/` is cleaned after some days, otherwise it fills up with files of unknown players.
+- The collector parses anonymous files, so the parser needs limits for size and time (`XMLReader` with `LIBXML_NONET` is in place, the limits are to be checked).
+- The texts of a report (`event_name`, `event_source`, `metadata`, `time_zone`, `hdmi_output`) come from the player and are shown in the CMS. The CMS must escape them.
+
+**Managing the list**
+
+- CLI `bin/console player:add|list|remove`, like `apikey:*`.
+- Later optionally an API for the CMS (`PUT`/`DELETE`/`GET /v1/uploaders`). It needs a management scope: a new case in `Scope`, set on the routes with `->setArgument('scope', 'manage')`, which `ApiKeyMiddleware` already reads.
 
 **To decide before the work starts**
 
-1. How does the upload endpoint learn the credentials? Either a volume with an auth file (e.g. Apache DBM) shared with the API, or the collector checks Basic Auth itself against a store the API writes. The second is cleaner and independent of the web server configuration, but PHP then accepts the upload instead of a ready-made WebDAV server, which is a larger change than `docs/architecture.md` describes.
-2. Scopes: `Scope::forMethod` derives the scope from the HTTP method, so `PUT` and `DELETE` count as `ingest` today. A management scope needs a rule by route, otherwise the collector's `ingest` key could enable players.
-3. Who creates the password: analytics (returns it to the CMS) or the CMS (registers it at analytics).
-4. Size limits per upload at the web server, so an unknown or malicious client cannot fill the disk.
-5. Whether the SMIL player can send Basic Auth credentials for uploads, and where the player reads them from.
-
+1. Where the list lives and how the web server reads it. One text file that the collector and the web server both read is the simplest.
+2. The exact format of the `User-Agent` of an upload (the UUID is in it), best from a capture of a real upload.
+3. The limits: file size and rate per IP, days until `error/` is cleaned.
