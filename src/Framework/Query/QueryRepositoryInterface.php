@@ -36,9 +36,9 @@ interface QueryRepositoryInterface
     public function count(PageQuery $query): int;
 
     /**
-     * The records of the page. Times are ISO 8601 strings in UTC ("2026-10-03T13:30:00Z"), a Map column is an object.
+     * The records of the page. Times are ISO 8601 strings in UTC ("2026-10-03T13:30:00Z"), a Map column is an object, a missing value of a Nullable column is null.
      *
-     * @return list<array<string,int|string|object>>
+     * @return list<array<string,int|string|object|null>>
      * @throws DatabaseException
      */
     public function find(PageQuery $query): array;

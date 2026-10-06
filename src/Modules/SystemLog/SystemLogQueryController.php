@@ -19,28 +19,8 @@
 */
 declare(strict_types=1);
 
-namespace App\Framework\Query;
+namespace App\Modules\SystemLog;
 
-/**
- * One page of a result: $total is the number of all matching records, $items only those of the page.
- */
-readonly class Page
-{
-    /**
-     * @param list<array<string,int|string|object|null>> $items
-     */
-    public function __construct(
-        public int   $total,
-        public int   $limit,
-        public int   $offset,
-        public array $items
-    ) {}
+use App\Framework\Query\QueryController;
 
-    /**
-     * @return array{total: int, limit: int, offset: int, items: list<array<string,int|string|object|null>>}
-     */
-    public function toArray(): array
-    {
-        return ['total' => $this->total, 'limit' => $this->limit, 'offset' => $this->offset, 'items' => $this->items];
-    }
-}
+readonly class SystemLogQueryController extends QueryController {}

@@ -66,7 +66,7 @@ abstract class AppIntegrationTestCase extends ClickHouseTestCase
 
         $builder = new ContainerBuilder();
         $builder->addDefinitions([Config::class => new Config(new IniConfigLoader($dir . '/config/settings'), $paths, self::connectionSettings())]);
-        foreach (['_default', 'database', 'playlog', 'eventlog', 'auth', 'http'] as $file)
+        foreach (['_default', 'database', 'playlog', 'eventlog', 'systemlog', 'auth', 'http'] as $file)
             $builder->addDefinitions($dir . '/config/services/' . $file . '.php');
 
         /** @var callable(ContainerInterface): App<ContainerInterface> $middleware */

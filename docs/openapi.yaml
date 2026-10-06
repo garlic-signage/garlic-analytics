@@ -312,6 +312,73 @@ paths:
         '500': { $ref: '#/components/responses/ServerError' }
 
   /v1/systemlog:
+    get:
+      tags: [SystemLog]
+      summary: List the system reports of a player
+      description: |
+        One page of the raw system reports of one player in a time range, with the number of all matching
+        records for the pagination. Needs the scope `read`.
+
+        A report belongs to the time range by its `reported_at`: `from` is included, `to` is excluded.
+        The order follows `reported_at` (then `system_start`, `disk_total` and `disk_free`). Two requests are
+        not one transaction: if data arrives between them, `total` and the pages can differ by the new records.
+
+        An unknown player is not an error, the answer is an empty page with `total` 0.
+
+        A value the player did not report is `null` (`cpu_usage`, `memory_total`, `memory_used`), `0` is a
+        real measurement. `hdmi_output` is an empty string if the player did not report it. For a chart use
+        `order=asc` and treat `null` as a gap. The reports are raw data, a long time range needs several pages.
+      operationId: listSystemLog
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/QueryPlayerId'
+        - $ref: '#/components/parameters/QueryFrom'
+        - $ref: '#/components/parameters/QueryTo'
+        - name: limit
+          in: query
+          required: false
+          description: Number of records of the page (defaults and maximum are set in `config/settings/config_systemlog.ini`).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - $ref: '#/components/parameters/QueryOffset'
+        - name: order
+          in: query
+          required: false
+          description: Order by `reported_at`, newest first by default.
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: One page of system reports.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemLogPage'
+              example:
+                total: 288
+                limit: 100
+                offset: 0
+                items:
+                  - reported_at: '2026-10-03T13:30:27Z'
+                    system_start: '2026-09-20T05:12:03Z'
+                    time_zone: Europe/Berlin
+                    disk_total: 31457280000
+                    disk_free: 12884901888
+                    cpu_usage: 31
+                    memory_total: 4294967296
+                    memory_used: 2147483648
+                    hdmi_output: HDMI-1
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
     post:
       tags: [SystemLog]
       summary: Ingest system reports
@@ -695,6 +762,63 @@ components:
           additionalProperties:
             type: string
             maxLength: 1024
+
+    SystemLogPage:
+      type: object
+      required: [total, limit, offset, items]
+      properties:
+        total:
+          type: integer
+          minimum: 0
+          description: Number of all records of the player in the time range.
+        limit:
+          type: integer
+        offset:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SystemLogItem'
+
+    SystemLogItem:
+      type: object
+      required: [reported_at, system_start, time_zone, disk_total, disk_free, cpu_usage, memory_total, memory_used, hdmi_output]
+      properties:
+        reported_at:
+          type: string
+          description: UTC, with `Z`.
+          examples: ['2026-10-03T13:30:27Z']
+        system_start:
+          type: string
+          description: Boot time of the player. UTC, with `Z`.
+          examples: ['2026-09-20T05:12:03Z']
+        time_zone:
+          type: string
+          description: As the player sent it, e.g. `MEZ` or `Europe/Berlin`.
+        disk_total:
+          type: integer
+          minimum: 0
+          description: Bytes.
+        disk_free:
+          type: integer
+          minimum: 0
+          description: Bytes.
+        cpu_usage:
+          type: [integer, 'null']
+          minimum: 0
+          maximum: 100
+          description: Percent. `null` if the player did not report it.
+        memory_total:
+          type: [integer, 'null']
+          minimum: 0
+          description: Bytes. `null` if the player did not report it.
+        memory_used:
+          type: [integer, 'null']
+          minimum: 0
+          description: Bytes. `null` if the player did not report it.
+        hdmi_output:
+          type: string
+          description: Empty if the player did not report it.
 
     SystemLogRequest:
       type: object

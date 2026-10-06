@@ -20,11 +20,16 @@
 declare(strict_types=1);
 
 use App\Modules\SystemLog\SystemLogController;
+use App\Modules\SystemLog\SystemLogQueryController;
+use App\Modules\SystemLog\SystemLogQueryRepository;
 use App\Modules\SystemLog\SystemLogRepository;
 use App\Modules\SystemLog\SystemLogService;
 use App\Modules\SystemLog\SystemLogValidator;
 
-/** @var Closure $define */
-$define = require __DIR__ . '/../ingest_module.php';
+/** @var Closure(string, string, string, string, string): array<string,mixed> $defineIngest */
+$defineIngest = require __DIR__ . '/../ingest_module.php';
+/** @var Closure(string, string, string): array<string,mixed> $defineQuery */
+$defineQuery  = require __DIR__ . '/../query_module.php';
 
-return $define('systemlog', SystemLogController::class, SystemLogService::class, SystemLogValidator::class, SystemLogRepository::class);
+return $defineIngest('systemlog', SystemLogController::class, SystemLogService::class, SystemLogValidator::class, SystemLogRepository::class)
+    + $defineQuery('systemlog', SystemLogQueryController::class, SystemLogQueryRepository::class);

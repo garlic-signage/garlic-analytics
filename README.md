@@ -15,7 +15,7 @@ Early development. Working today:
 
 - Ingest of play logs, player events, system reports and connects (`POST /v1/playlog`, `/eventlog`, `/systemlog`, `/connectlog`) into ClickHouse, with validation and idempotent retries
 - API key authentication with scopes (`ingest`, `read`)
-- Reading of the raw play logs and events of a player in a time range, paginated (`GET /v1/playlog`, `GET /v1/eventlog`, the events optionally filtered by severity, source and name)
+- Reading of the raw play logs, events and system reports of a player in a time range, paginated (`GET /v1/playlog`, `GET /v1/eventlog`, `GET /v1/systemlog`), the events optionally filtered by severity, source and name
 - Schema migrations (`bin/console db:migrate`)
 - Collector for SMIL player reports: normalizes uploaded files and sends them to the API
 

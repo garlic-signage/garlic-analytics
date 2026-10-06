@@ -28,6 +28,7 @@ use App\Modules\EventLog\EventLogQueryController;
 use App\Modules\PlayLog\PlayLogController;
 use App\Modules\PlayLog\PlayLogQueryController;
 use App\Modules\SystemLog\SystemLogController;
+use App\Modules\SystemLog\SystemLogQueryController;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\App;
@@ -49,6 +50,7 @@ return function (App $app): void
         $group->post('/eventlog', [EventLogController::class, 'ingest']);
         $group->get('/eventlog', [EventLogQueryController::class, 'list']);
         $group->post('/systemlog', [SystemLogController::class, 'ingest']);
+        $group->get('/systemlog', [SystemLogQueryController::class, 'list']);
         $group->post('/connectlog', [ConnectLogController::class, 'ingest']);
     })->add(ApiKeyMiddleware::class);
 };
