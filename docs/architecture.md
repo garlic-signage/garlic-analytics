@@ -80,6 +80,8 @@ The limits are set per module in `config/settings/config_<module>.ini` (`max_eve
 
 Reading connects: `GET /v1/connectlog` sums the hourly aggregate `connect_hourly` up per hour, day or month (`resolution`), days and months in the time zone of the CMS (`time_zone`). The hours of the aggregate are UTC, so a zone with half or quarter hours counts an hour that crosses local midnight for one day entirely. `GET /v1/connectlog/raw` reads `connect_log` and is limited to a range of `max_raw_range_hours` (25), the raw records have the shorter retention.
 
+Reading the proof-of-play: `GET /v1/playlog/stats` answers for one player how often and how long each content was played in a time range (sorted by `content_id`, or by `plays` or `duration_s`), `GET /v1/playlog/stats/period` the plays per hour, day or month, optionally of one content. Both sum the hourly aggregate `play_hourly` up, which has no TTL, so they reach further back than the raw records of `play_log` (2 years). A play belongs to the hour it started in and is not split at an hour or day boundary. Days and months use `time_zone` like the connects.
+
 The sender of connects decides how to send them. One request with one entry works, but a sender with many players should collect the connects and send them together (a few seconds up to a minute) to prevent ClickHouse from too many tiny inserts. ClickHouse `async_insert` is not used: it cannot be combined with the deduplication in the hourly table.
 
 ## Authentication

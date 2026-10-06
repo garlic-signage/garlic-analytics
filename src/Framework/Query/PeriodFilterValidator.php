@@ -19,17 +19,16 @@
 */
 declare(strict_types=1);
 
-namespace App\Modules\ConnectLog;
+namespace App\Framework\Query;
 
-use App\Framework\Query\FilterValidatorInterface;
 use DateTimeZone;
 
 /**
- * The parameters of GET /v1/connectlog besides the common ones: resolution (hour, day or month, default hour)
- * and time_zone (an IANA name, default UTC). The filters always contain both, with the defaults filled in.
- * Needs nothing to check them, the DI passes a FieldValidator to every filter validator and this one ignores it.
+ * The parameters of a read endpoint that sums an hourly aggregate up per hour, day or month: resolution (hour,
+ * day or month, default hour) and time_zone (an IANA name, default UTC). The filters always contain both, with the
+ * defaults filled in. PeriodQuery builds the SQL from them.
  */
-readonly class ConnectLogFilterValidator implements FilterValidatorInterface
+readonly class PeriodFilterValidator implements FilterValidatorInterface
 {
     public const array RESOLUTIONS = ['hour', 'day', 'month'];
 

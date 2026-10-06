@@ -29,6 +29,8 @@ use App\Modules\EventLog\EventLogController;
 use App\Modules\EventLog\EventLogQueryController;
 use App\Modules\PlayLog\PlayLogController;
 use App\Modules\PlayLog\PlayLogQueryController;
+use App\Modules\PlayLog\PlayLogStatsController;
+use App\Modules\PlayLog\PlayLogStatsPeriodController;
 use App\Modules\SystemLog\SystemLogController;
 use App\Modules\SystemLog\SystemLogQueryController;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -49,6 +51,8 @@ return function (App $app): void
     {
         $group->post('/playlog', [PlayLogController::class, 'ingest']);
         $group->get('/playlog', [PlayLogQueryController::class, 'list']);
+        $group->get('/playlog/stats', [PlayLogStatsController::class, 'list']);
+        $group->get('/playlog/stats/period', [PlayLogStatsPeriodController::class, 'list']);
         $group->post('/eventlog', [EventLogController::class, 'ingest']);
         $group->get('/eventlog', [EventLogQueryController::class, 'list']);
         $group->post('/systemlog', [SystemLogController::class, 'ingest']);

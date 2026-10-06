@@ -21,8 +21,8 @@ The foundation: accept normalized events and store them safely.
 Make the collected data usable.
 
 - Raw play logs of a player in a time range, paginated: `GET /v1/playlog` (done)
-- Aggregated proof-of-play (plays and duration per player, media and time range, paginated)
-- Time zone aware queries based on hourly aggregates (done for the connects, still to do for the proof-of-play)
+- Aggregated proof-of-play of a player: plays and duration per content (`GET /v1/playlog/stats`) and per hour, day or month (`GET /v1/playlog/stats/period`) (done)
+- Time zone aware queries based on hourly aggregates (done for the connects and the proof-of-play)
 - Every new read endpoint described in `docs/openapi.yaml`
 
 ## 0.3 More aggregates

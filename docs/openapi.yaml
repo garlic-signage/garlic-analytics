@@ -53,7 +53,7 @@ tags:
   - name: Health
     description: Liveness of the service.
   - name: PlayLog
-    description: Proof-of-play reports. Ingest, and the raw records of a player. Kept 2 years.
+    description: Proof-of-play reports. Ingest, the raw records of a player (kept 2 years) and the statistics per content and per period from the hourly aggregate `play_hourly` (kept without limit).
   - name: EventLog
     description: Events of players. Kept 6 months.
   - name: SystemLog
@@ -173,6 +173,178 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '413': { $ref: '#/components/responses/PayloadTooLarge' }
         '415': { $ref: '#/components/responses/UnsupportedEncoding' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+  /v1/playlog/stats:
+    get:
+      tags: [PlayLog]
+      summary: How often and how long a player played each of its contents
+      description: |
+        The proof-of-play of one player: one entry per content the player played in the time range, with the
+        number of plays and their total duration. Needs the scope `read`. The player is always the question, the
+        answer is its list of contents. `content_id` only narrows the list to one content.
+
+        It reads the hourly aggregate `play_hourly`, so it also works for times older than the raw records
+        (`GET /v1/playlog`, kept 2 years), the aggregate is kept without limit.
+
+        A play belongs to the hour it started in, a play that crosses an hour or a day boundary is not split. An
+        hour counts for the time range if it starts at `from` or later and before `to`. For a complete month send
+        its limits, e.g. for October in Berlin `from=2026-10-01T00:00:00+02:00` and `to=2026-11-01T00:00:00+01:00`.
+
+        The default order is by `content_id` ascending. With `sort=plays` and `order=desc` the most played content
+        comes first, `duration_s` sorts by the total duration. Contents with the same value are ordered by
+        `content_id` ascending, so the pages follow each other without gaps. A content without a play in the range
+        is not in the answer. An unknown player is not an error, the answer is an empty page with `total` 0.
+      operationId: listPlayLogStats
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/QueryPlayerId'
+        - $ref: '#/components/parameters/QueryFrom'
+        - $ref: '#/components/parameters/QueryTo'
+        - name: content_id
+          in: query
+          required: false
+          description: Only this content, exact match (case sensitive).
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+        - name: sort
+          in: query
+          required: false
+          description: What the order follows.
+          schema:
+            type: string
+            enum: [content_id, plays, duration_s]
+            default: content_id
+        - name: limit
+          in: query
+          required: false
+          description: Number of records of the page (defaults and maximum are set in `config/settings/config_playlog.ini`).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - $ref: '#/components/parameters/QueryOffset'
+        - name: order
+          in: query
+          required: false
+          description: Direction of the order by `sort`. Ascending by default, `sort=plays` with `desc` gives the most played first.
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+      responses:
+        '200':
+          description: One page of contents.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayLogStatsPage'
+              example:
+                total: 2
+                limit: 100
+                offset: 0
+                items:
+                  - content_id: spot-1
+                    plays: 1438
+                    duration_s: 14380
+                  - content_id: spot-2
+                    plays: 312
+                    duration_s: 4680
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+  /v1/playlog/stats/period:
+    get:
+      tags: [PlayLog]
+      summary: The plays of a player per hour, day or month
+      description: |
+        The plays of one player as a time series, per hour, day or month, with the number of plays and their
+        total duration, optionally only of one content. Needs the scope `read`. It reads the hourly aggregate
+        `play_hourly` like `GET /v1/playlog/stats` and has the same rules for the time range and the assignment
+        of a play to its hour.
+
+        `resolution` follows the view of the CMS: `hour` for the view of a day, `day` for a month, `month` for a
+        year. A day or a month is one of `time_zone`, the CMS sends its time zone. `hour` is not affected by
+        `time_zone`, an hour is the same hour everywhere: `period` is the start of the hour in UTC, the CMS converts
+        it for its display. The time zone is applied to whole hours of the aggregate. With whole-hour offsets
+        (Europe, also at the clock change) this is exact, for zones with half or quarter hours (e.g. India) an hour
+        that crosses local midnight is counted for one day entirely.
+
+        Periods without a play are not in the answer, the CMS recognizes gaps itself. The order follows `period`.
+        An unknown player is not an error, the answer is an empty page with `total` 0.
+      operationId: listPlayLogStatsPeriod
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/QueryPlayerId'
+        - $ref: '#/components/parameters/QueryFrom'
+        - $ref: '#/components/parameters/QueryTo'
+        - name: resolution
+          in: query
+          required: false
+          description: The size of a period.
+          schema:
+            type: string
+            enum: [hour, day, month]
+            default: hour
+        - name: time_zone
+          in: query
+          required: false
+          description: Name of the time zone (IANA, e.g. `Europe/Berlin`) that defines the days and months. No effect for `hour`.
+          schema:
+            type: string
+            default: UTC
+            examples: [Europe/Berlin]
+        - name: content_id
+          in: query
+          required: false
+          description: Only the plays of this content, exact match (case sensitive).
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+        - name: limit
+          in: query
+          required: false
+          description: Number of records of the page (defaults and maximum are set in `config/settings/config_playlog.ini`).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - $ref: '#/components/parameters/QueryOffset'
+        - name: order
+          in: query
+          required: false
+          description: Order by `period`, newest first by default.
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: One page of periods.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayLogStatsPeriodPage'
+              example:
+                total: 31
+                limit: 100
+                offset: 0
+                items:
+                  - period: '2026-10-31'
+                    plays: 412
+                    duration_s: 4120
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
         '500': { $ref: '#/components/responses/ServerError' }
 
@@ -810,6 +982,74 @@ components:
           type: integer
           minimum: 0
           description: Seconds from `start_time` to `end_time`.
+
+    PlayLogStatsPage:
+      type: object
+      required: [total, limit, offset, items]
+      properties:
+        total:
+          type: integer
+          minimum: 0
+          description: Number of all contents of the player with a play in the time range.
+        limit:
+          type: integer
+        offset:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlayLogStatsItem'
+
+    PlayLogStatsItem:
+      type: object
+      required: [content_id, plays, duration_s]
+      properties:
+        content_id:
+          type: string
+        plays:
+          type: integer
+          minimum: 0
+          description: Number of plays of the content in the time range.
+        duration_s:
+          type: integer
+          minimum: 0
+          description: Total seconds of these plays.
+
+    PlayLogStatsPeriodPage:
+      type: object
+      required: [total, limit, offset, items]
+      properties:
+        total:
+          type: integer
+          minimum: 0
+          description: Number of all periods of the player with a play in the time range.
+        limit:
+          type: integer
+        offset:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlayLogStatsPeriodItem'
+
+    PlayLogStatsPeriodItem:
+      type: object
+      required: [period, plays, duration_s]
+      properties:
+        period:
+          type: string
+          description: |
+            The start of the period. `hour`: UTC with `Z`. `day`: the date in the time zone of the query.
+            `month`: the month in the time zone of the query.
+          examples: ['2026-10-03T13:00:00Z', '2026-10-03', '2026-10']
+        plays:
+          type: integer
+          minimum: 0
+          description: Number of plays in the period.
+        duration_s:
+          type: integer
+          minimum: 0
+          description: Total seconds of these plays.
 
     PlayLogRequest:
       type: object

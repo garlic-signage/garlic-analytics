@@ -24,10 +24,10 @@ namespace Tests\Modules\ConnectLog;
 use App\Framework\Database\ClickHouseClientInterface;
 use App\Framework\Exceptions\ValidationException;
 use App\Framework\Query\PageQueryValidator;
+use App\Framework\Query\PeriodFilterValidator;
 use App\Framework\Query\QueryController;
 use App\Framework\Query\QueryService;
 use App\Framework\Validation\FieldValidator;
-use App\Modules\ConnectLog\ConnectLogFilterValidator;
 use App\Modules\ConnectLog\ConnectLogQueryController;
 use App\Modules\ConnectLog\ConnectLogQueryRepository;
 use App\Modules\ConnectLog\ConnectLogRawQueryController;
@@ -43,7 +43,7 @@ class ConnectLogQueryControllerTest extends TestCase
     private function aggregate(ClickHouseClientInterface $client): QueryController
     {
         return new ConnectLogQueryController(new QueryService(
-            new PageQueryValidator(new FieldValidator(), 100, 1000, new ConnectLogFilterValidator()),
+            new PageQueryValidator(new FieldValidator(), 100, 1000, new PeriodFilterValidator()),
             new ConnectLogQueryRepository($client)
         ));
     }

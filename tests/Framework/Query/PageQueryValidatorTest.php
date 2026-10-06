@@ -244,4 +244,15 @@ class PageQueryValidatorTest extends TestCase
             static::assertSame(['to' => 'must not be more than 90 seconds after from'], $e->getErrors());
         }
     }
+
+    #[Group('units')]
+    public function testTheModuleCanSetAnAscendingDefaultOrder(): void
+    {
+        $validator = new PageQueryValidator(new FieldValidator(), 100, 1000, null, null, false);
+
+        static::assertFalse($validator->validate($this->params())->descending);
+        static::assertTrue($validator->validate($this->params(['order' => 'desc']))->descending);
+        static::assertFalse($validator->validate($this->params(['order' => 'asc']))->descending);
+        static::assertTrue($this->validator->validate($this->params())->descending);
+    }
 }

@@ -19,13 +19,13 @@
 */
 declare(strict_types=1);
 
-namespace Tests\Modules\ConnectLog;
+namespace Tests\Framework\Query;
 
-use App\Modules\ConnectLog\ConnectLogFilterValidator;
+use App\Framework\Query\PeriodFilterValidator;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
-class ConnectLogFilterValidatorTest extends TestCase
+class PeriodFilterValidatorTest extends TestCase
 {
     /**
      * @param array<string,mixed> $params
@@ -34,7 +34,7 @@ class ConnectLogFilterValidatorTest extends TestCase
     private function check(array $params): array
     {
         $errors  = [];
-        $filters = new ConnectLogFilterValidator()->validate($params, $errors);
+        $filters = new PeriodFilterValidator()->validate($params, $errors);
 
         return [$filters, $errors];
     }

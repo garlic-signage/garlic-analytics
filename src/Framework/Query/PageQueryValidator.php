@@ -33,7 +33,7 @@ use DateTimeImmutable;
  *   and at most $maxRangeSeconds after from if the module sets a maximum for the range
  * - limit: optional, 1 up to the maximum of the module, default of the module
  * - offset: optional, 0 or more
- * - order: optional, "asc" or "desc" (default) by time
+ * - order: optional, "asc" or "desc" (default of the module, desc if it sets none)
  *
  * All errors are collected, the key is the name of the parameter.
  */
@@ -48,7 +48,8 @@ readonly class PageQueryValidator
         private int            $defaultLimit,
         private int            $maxLimit,
         private ?FilterValidatorInterface $filterValidator = null,
-        private ?int           $maxRangeSeconds = null
+        private ?int           $maxRangeSeconds = null,
+        private bool           $defaultDescending = true
     ) {}
 
     /**
@@ -76,7 +77,7 @@ readonly class PageQueryValidator
         $limit  = $this->number($params, 'limit', 1, $this->maxLimit, $this->defaultLimit, $errors);
         $offset = $this->number($params, 'offset', 0, self::MAX_OFFSET, 0, $errors);
 
-        $order = $params['order'] ?? 'desc';
+        $order = $params['order'] ?? ($this->defaultDescending ? 'desc' : 'asc');
         if ($order !== 'asc' && $order !== 'desc')
             $errors['order'] = 'must be asc or desc';
 

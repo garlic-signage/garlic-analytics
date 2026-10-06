@@ -19,36 +19,29 @@
 */
 declare(strict_types=1);
 
-namespace App\Modules\ConnectLog;
+namespace App\Modules\PlayLog;
 
-use App\Framework\Database\ClickHouseClientInterface;
 use App\Framework\Exceptions\DatabaseException;
 use App\Framework\Query\PageQuery;
 use App\Framework\Query\PeriodQuery;
-use App\Framework\Query\QueryRepositoryInterface;
 
 /**
- * The connects of a player per hour, day or month, summed up from the hourly aggregate connect_hourly.
- * Days and months are those of the time zone of the query. A period belongs to the range by the start of the
- * hours it consists of: an hour counts if it starts at from or later and before to.
+ * The plays of a player per hour, day or month, optionally of one content, summed up from the hourly
+ * aggregate play_hourly. Days and months are those of the time zone of the query. A play belongs to the hour
+ * it started in, a play over a full hour is not split.
  *
  * The aggregate is a SummingMergeTree, so every query uses sum() and GROUP BY.
  */
-readonly class ConnectLogQueryRepository implements QueryRepositoryInterface
+readonly class PlayLogStatsPeriodRepository extends PlayHourlyRepository
 {
-    private const string FILTER = "player_id = {player_id:String}
-        AND hour >= toDateTime({from:UInt32}, 'UTC')
-        AND hour < toDateTime({to:UInt32}, 'UTC')";
-
-    public function __construct(private ClickHouseClientInterface $client) {}
-
     /**
      * @throws DatabaseException
      */
     public function count(PageQuery $query): int
     {
         $rows = $this->client->select(
-            'SELECT count() AS total FROM (SELECT ' . PeriodQuery::expression($query) . ' AS period FROM connect_hourly WHERE ' . self::FILTER . ' GROUP BY period)',
+            'SELECT count() AS total FROM (SELECT ' . PeriodQuery::expression($query) . ' AS period FROM play_hourly WHERE '
+                . $this->where($query) . ' GROUP BY period)',
             $this->parameters($query)
         );
 
@@ -63,8 +56,8 @@ readonly class ConnectLogQueryRepository implements QueryRepositoryInterface
     {
         $direction = $query->descending ? 'DESC' : 'ASC';
         $rows      = $this->client->select(
-            'SELECT ' . PeriodQuery::expression($query) . ' AS period, sum(connects) AS total_connects, sum(covered_s) AS total_covered_s
-             FROM connect_hourly WHERE ' . self::FILTER . '
+            'SELECT ' . PeriodQuery::expression($query) . ' AS period, sum(plays) AS total_plays, sum(duration_s) AS total_duration_s
+             FROM play_hourly WHERE ' . $this->where($query) . '
              GROUP BY period
              ORDER BY period ' . $direction . '
              LIMIT {limit:UInt32} OFFSET {offset:UInt32}',
@@ -74,11 +67,10 @@ readonly class ConnectLogQueryRepository implements QueryRepositoryInterface
         $items = [];
         foreach ($rows as $row)
         {
-            $period  = $row['period'] ?? '';
             $items[] = [
-                'period'    => PeriodQuery::label($query, $period),
-                'connects'  => $this->toInt($row['total_connects'] ?? 0),
-                'covered_s' => $this->toInt($row['total_covered_s'] ?? 0),
+                'period'     => PeriodQuery::label($query, $row['period'] ?? ''),
+                'plays'      => $this->toInt($row['total_plays'] ?? 0),
+                'duration_s' => $this->toInt($row['total_duration_s'] ?? 0),
             ];
         }
 
@@ -88,21 +80,8 @@ readonly class ConnectLogQueryRepository implements QueryRepositoryInterface
     /**
      * @return array<string,int|string>
      */
-    private function parameters(PageQuery $query): array
+    protected function parameters(PageQuery $query): array
     {
-        return [
-            'player_id' => $query->playerId,
-            'from'      => $query->from->getTimestamp(),
-            'to'        => $query->to->getTimestamp(),
-            ...PeriodQuery::parameters($query),
-        ];
-    }
-
-    /**
-     * ClickHouse sends UInt64 as a string in JSON.
-     */
-    private function toInt(mixed $value): int
-    {
-        return is_int($value) || is_string($value) ? (int) $value : 0;
+        return [...parent::parameters($query), ...PeriodQuery::parameters($query)];
     }
 }
