@@ -198,4 +198,50 @@ class PageQueryValidatorTest extends TestCase
             static::assertSame(['order' => 'must be asc or desc', 'bad' => 'is bad'], $e->getErrors());
         }
     }
+
+    #[Group('units')]
+    public function testTheRangeIsLimitedIfTheModuleSetsAMaximum(): void
+    {
+        $validator = new PageQueryValidator(new FieldValidator(), 100, 1000, null, 25 * 3600);
+        $params    = ['player_id' => 'p1', 'from' => '2026-10-01T00:00:00Z'];
+
+        static::assertSame(
+            1790899200 + 3600,
+            $validator->validate($params + ['to' => '2026-10-02T01:00:00Z'])->to->getTimestamp() // exactly 25 hours is allowed
+        );
+
+        try
+        {
+            $validator->validate($params + ['to' => '2026-10-02T01:00:01Z']);
+            static::fail('ValidationException expected');
+        }
+        catch (ValidationException $e)
+        {
+            static::assertSame(['to' => 'must not be more than 25 hours after from'], $e->getErrors());
+        }
+    }
+
+    #[Group('units')]
+    public function testTheRangeIsNotLimitedWithoutAMaximum(): void
+    {
+        $query = $this->validator->validate($this->params(['from' => '2020-01-01T00:00:00Z', 'to' => '2026-01-01T00:00:00Z']));
+
+        static::assertSame(1767225600, $query->to->getTimestamp());
+    }
+
+    #[Group('units')]
+    public function testAMaximumInSecondsIsNamedInSeconds(): void
+    {
+        $validator = new PageQueryValidator(new FieldValidator(), 100, 1000, null, 90);
+
+        try
+        {
+            $validator->validate(['player_id' => 'p1', 'from' => '2026-10-01T00:00:00Z', 'to' => '2026-10-01T00:02:00Z']);
+            static::fail('ValidationException expected');
+        }
+        catch (ValidationException $e)
+        {
+            static::assertSame(['to' => 'must not be more than 90 seconds after from'], $e->getErrors());
+        }
+    }
 }

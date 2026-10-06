@@ -22,7 +22,7 @@ Make the collected data usable.
 
 - Raw play logs of a player in a time range, paginated: `GET /v1/playlog` (done)
 - Aggregated proof-of-play (plays and duration per player, media and time range, paginated)
-- Time zone aware queries based on hourly aggregates
+- Time zone aware queries based on hourly aggregates (done for the connects, still to do for the proof-of-play)
 - Every new read endpoint described in `docs/openapi.yaml`
 
 ## 0.3 More aggregates
@@ -31,7 +31,7 @@ Read the other event types.
 
 - Raw events of a player in a time range, paginated, optionally filtered by severity (`min_type`, `event_type`), source and name: `GET /v1/eventlog` (done)
 - Raw system reports of a player in a time range, paginated: `GET /v1/systemlog` (done)
-- Read endpoint for ConnectLog (`connect_hourly`, raw records with the same `Framework\Query` parts as the play log)
+- Connects of a player per hour, day or month in the time zone of the CMS, from `connect_hourly`: `GET /v1/connectlog` (done), raw connects for one day: `GET /v1/connectlog/raw` (done)
 - Aggregation by player group
 - Set the retention of `connect_log` back to 3 months when the migration of SmilControl is done
 

@@ -59,7 +59,7 @@ tags:
   - name: SystemLog
     description: System reports of players. Kept 6 months.
   - name: ConnectLog
-    description: Connects (index requests) of players. Kept 4 years, hourly aggregate `connect_hourly`.
+    description: Connects (index requests) of players. Kept 4 years, hourly aggregate `connect_hourly`. Read as hours, days or months, and as raw records for one day.
 
 security:
   - bearerAuth: []
@@ -421,6 +421,103 @@ paths:
         '500': { $ref: '#/components/responses/ServerError' }
 
   /v1/connectlog:
+    get:
+      tags: [ConnectLog]
+      summary: List the connects of a player per hour, day or month
+      description: |
+        One page of the connects of one player in a time range, summed up per hour, day or month. Needs the scope
+        `read`. It reads the hourly aggregate, so it works for the whole retention of the aggregate (unlimited).
+        The raw records are in `GET /v1/connectlog/raw`.
+
+        `resolution` follows the view of the CMS: `hour` for the view of a day, `day` for a month, `month` for a year.
+        A day or a month is one of `time_zone`, the CMS sends its time zone. `hour` is not affected by
+        `time_zone`, an hour is the same hour everywhere: `period` is the start of the hour in UTC, the CMS converts
+        it for its display. The time zone is always applied to whole hours of the aggregate. With whole-hour offsets
+        (Europe, also at the clock change) this is exact, for zones with half or quarter hours (e.g. India) an hour
+        that crosses local midnight is counted for one day entirely.
+
+        A period belongs to the time range by the start of its hours: an hour counts if it starts at `from` or
+        later and before `to`. To get complete days or months, send their local limits, e.g. for October in Berlin
+        `from=2026-10-01T00:00:00+02:00` and `to=2026-11-01T00:00:00+01:00`. A partly covered period at the border
+        contains only the hours inside.
+
+        Periods without a connect are not in the answer, the CMS recognizes gaps itself. The order follows `period`.
+        An unknown player is not an error, the answer is an empty page with `total` 0. Two requests are not one
+        transaction: if data arrives between them, `total` and the pages can differ by the new records.
+      operationId: listConnectLog
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/QueryPlayerId'
+        - $ref: '#/components/parameters/QueryFrom'
+        - $ref: '#/components/parameters/QueryTo'
+        - name: resolution
+          in: query
+          required: false
+          description: The size of a period.
+          schema:
+            type: string
+            enum: [hour, day, month]
+            default: hour
+        - name: time_zone
+          in: query
+          required: false
+          description: Name of the time zone (IANA, e.g. `Europe/Berlin`) that defines the days and months. No effect for `hour`.
+          schema:
+            type: string
+            default: UTC
+            examples: [Europe/Berlin]
+        - name: limit
+          in: query
+          required: false
+          description: Number of records of the page (defaults and maximum are set in `config/settings/config_connectlog.ini`).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - $ref: '#/components/parameters/QueryOffset'
+        - name: order
+          in: query
+          required: false
+          description: Order by `period`, newest first by default.
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: One page of periods.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectLogPage'
+              examples:
+                days:
+                  summary: resolution=day, time_zone=Europe/Berlin
+                  value:
+                    total: 31
+                    limit: 100
+                    offset: 0
+                    items:
+                      - period: '2026-10-02'
+                        connects: 1438
+                        covered_s: 86280
+                hours:
+                  summary: resolution=hour
+                  value:
+                    total: 24
+                    limit: 100
+                    offset: 0
+                    items:
+                      - period: '2026-10-02T13:00:00Z'
+                        connects: 60
+                        covered_s: 3600
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
     post:
       tags: [ConnectLog]
       summary: Ingest connects
@@ -453,6 +550,70 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '413': { $ref: '#/components/responses/PayloadTooLarge' }
         '415': { $ref: '#/components/responses/UnsupportedEncoding' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+  /v1/connectlog/raw:
+    get:
+      tags: [ConnectLog]
+      summary: List the raw connects of a player for one day
+      description: |
+        One page of the single connects (index requests) of one player in a short time range. Needs the scope
+        `read`. For longer ranges use `GET /v1/connectlog`.
+
+        The range from `from` to `to` is at most 25 hours (`max_raw_range_hours` in
+        `config/settings/config_connectlog.ini`): a day, and an hour more for the day of a clock change. A longer
+        range is a `422`. `from` is included, `to` is excluded. The order follows `connected_at` (then `refresh`).
+
+        The raw records are kept for the retention of `connect_log` (4 years now, 3 months after the migration
+        of SmilControl), the aggregate is kept longer. For older days the page is empty.
+        An unknown player is not an error, the answer is an empty page with `total` 0.
+      operationId: listConnectLogRaw
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/QueryPlayerId'
+        - $ref: '#/components/parameters/QueryFrom'
+        - name: to
+          in: query
+          required: true
+          description: End of the time range, excluded. Must be after `from` and at most 25 hours later.
+          schema:
+            $ref: '#/components/schemas/Timestamp'
+        - name: limit
+          in: query
+          required: false
+          description: Number of records of the page (defaults and maximum are set in `config/settings/config_connectlog.ini`).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - $ref: '#/components/parameters/QueryOffset'
+        - name: order
+          in: query
+          required: false
+          description: Order by `connected_at`, newest first by default.
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: One page of connects.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectLogRawPage'
+              example:
+                total: 1438
+                limit: 100
+                offset: 0
+                items:
+                  - connected_at: '2026-10-03T13:30:27Z'
+                    refresh: 60
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
         '500': { $ref: '#/components/responses/ServerError' }
 
@@ -874,6 +1035,72 @@ components:
           type: string
           maxLength: 64
           description: Optional. Stored as an empty string if missing.
+
+    ConnectLogPage:
+      type: object
+      required: [total, limit, offset, items]
+      properties:
+        total:
+          type: integer
+          minimum: 0
+          description: Number of all periods of the player in the time range.
+        limit:
+          type: integer
+        offset:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConnectLogItem'
+
+    ConnectLogItem:
+      type: object
+      required: [period, connects, covered_s]
+      properties:
+        period:
+          type: string
+          description: |
+            The start of the period. `hour`: UTC with `Z`. `day`: the date in the time zone of the query.
+            `month`: the month in the time zone of the query.
+          examples: ['2026-10-03T13:00:00Z', '2026-10-03', '2026-10']
+        connects:
+          type: integer
+          minimum: 0
+          description: Number of connects in the period.
+        covered_s:
+          type: integer
+          minimum: 0
+          description: Sum of the `refresh` values of the connects, the seconds the connects cover.
+
+    ConnectLogRawPage:
+      type: object
+      required: [total, limit, offset, items]
+      properties:
+        total:
+          type: integer
+          minimum: 0
+          description: Number of all connects of the player in the time range.
+        limit:
+          type: integer
+        offset:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConnectLogRawItem'
+
+    ConnectLogRawItem:
+      type: object
+      required: [connected_at, refresh]
+      properties:
+        connected_at:
+          type: string
+          description: UTC, with `Z`.
+          examples: ['2026-10-03T13:30:27Z']
+        refresh:
+          type: integer
+          minimum: 1
+          description: Refresh interval of the player in seconds, the time the connect covers.
 
     ConnectLogRequest:
       type: object

@@ -78,6 +78,8 @@ The limits are set per module in `config/settings/config_<module>.ini` (`max_eve
 
 **`connectlog`:** there is no collector for this type, the CMS sends the connects to the API. The retention of 4 years is meant for the migration of the data of SmilControl. When it is done, it is set back to 3 months with a new migration file (`ALTER TABLE connect_log MODIFY TTL connected_at + INTERVAL 3 MONTH`, repeatable) and `max_age_days = 90`. The next merge then drops everything older.
 
+Reading connects: `GET /v1/connectlog` sums the hourly aggregate `connect_hourly` up per hour, day or month (`resolution`), days and months in the time zone of the CMS (`time_zone`). The hours of the aggregate are UTC, so a zone with half or quarter hours counts an hour that crosses local midnight for one day entirely. `GET /v1/connectlog/raw` reads `connect_log` and is limited to a range of `max_raw_range_hours` (25), the raw records have the shorter retention.
+
 The sender of connects decides how to send them. One request with one entry works, but a sender with many players should collect the connects and send them together (a few seconds up to a minute) to prevent ClickHouse from too many tiny inserts. ClickHouse `async_insert` is not used: it cannot be combined with the deduplication in the hourly table.
 
 ## Authentication

@@ -38,10 +38,11 @@ use Psr\Container\ContainerInterface;
  *
  * $module is the name of the settings file config/settings/config_<module>.ini with default_limit and max_limit.
  * A module with optional filter parameters passes the class of its FilterValidatorInterface as fourth argument.
+ * The fifth argument is the key in the settings file with the maximum range of from to to in hours (no limit if null).
  *
- * @return Closure(string, class-string<QueryController>, class-string<QueryRepositoryInterface>, class-string<FilterValidatorInterface>|null=): array<string,mixed>
+ * @return Closure(string, class-string<QueryController>, class-string<QueryRepositoryInterface>, class-string<FilterValidatorInterface>|null=, string|null=): array<string,mixed>
  */
-return function (string $module, string $controller, string $repository, ?string $filterValidator = null): array
+return function (string $module, string $controller, string $repository, ?string $filterValidator = null, ?string $maxRangeKey = null): array
 {
     $dependencies = [];
 
@@ -53,7 +54,7 @@ return function (string $module, string $controller, string $repository, ?string
         return new $repository($client);
     });
 
-    $dependencies[$controller] = DI\factory(function (ContainerInterface $container) use ($module, $controller, $repository, $filterValidator)
+    $dependencies[$controller] = DI\factory(function (ContainerInterface $container) use ($module, $controller, $repository, $filterValidator, $maxRangeKey)
     {
         /** @var Config $config */
         $config = $container->get(Config::class);
@@ -67,7 +68,8 @@ return function (string $module, string $controller, string $repository, ?string
             new FieldValidator(),
             (int) $config->getConfigValue('default_limit', $module),
             (int) $config->getConfigValue('max_limit', $module),
-            $filters
+            $filters,
+            $maxRangeKey === null ? null : (int) $config->getConfigValue($maxRangeKey, $module) * 3600
         );
 
         return new $controller(new QueryService($validator, $repositoryInstance));

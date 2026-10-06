@@ -19,17 +19,8 @@
 */
 declare(strict_types=1);
 
-namespace App\Framework\Query;
+namespace App\Modules\ConnectLog;
 
-/**
- * Checks the optional filter parameters of one module (e.g. a type or a source) next to the common ones.
- */
-interface FilterValidatorInterface
-{
-    /**
-     * @param array<array-key,mixed> $params the query parameters of the request
-     * @param array<string,string>   $errors collects the messages per parameter
-     * @return array<string,string|list<string>> the filters to apply, a module may fill in defaults
-     */
-    public function validate(array $params, array &$errors): array;
-}
+use App\Framework\Query\QueryController;
+
+readonly class ConnectLogQueryController extends QueryController {}

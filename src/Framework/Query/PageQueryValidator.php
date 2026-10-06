@@ -29,7 +29,8 @@ use DateTimeImmutable;
  * Validates the query parameters of GET /v1/<module>:
  *
  * - player_id: required
- * - from, to: required, ISO 8601 with offset, from is included, to is excluded and must be after from
+ * - from, to: required, ISO 8601 with offset, from is included, to is excluded and must be after from,
+ *   and at most $maxRangeSeconds after from if the module sets a maximum for the range
  * - limit: optional, 1 up to the maximum of the module, default of the module
  * - offset: optional, 0 or more
  * - order: optional, "asc" or "desc" (default) by time
@@ -46,7 +47,8 @@ readonly class PageQueryValidator
         private FieldValidator $fields,
         private int            $defaultLimit,
         private int            $maxLimit,
-        private ?FilterValidatorInterface $filterValidator = null
+        private ?FilterValidatorInterface $filterValidator = null,
+        private ?int           $maxRangeSeconds = null
     ) {}
 
     /**
@@ -63,8 +65,13 @@ readonly class PageQueryValidator
 
         $from = $this->time($params['from'] ?? null, 'from', $errors);
         $to   = $this->time($params['to'] ?? null, 'to', $errors);
-        if ($from !== null && $to !== null && $to <= $from)
-            $errors['to'] = 'must be after from';
+        if ($from !== null && $to !== null)
+        {
+            if ($to <= $from)
+                $errors['to'] = 'must be after from';
+            elseif ($this->maxRangeSeconds !== null && $to->getTimestamp() - $from->getTimestamp() > $this->maxRangeSeconds)
+                $errors['to'] = 'must not be more than ' . $this->describeRange($this->maxRangeSeconds) . ' after from';
+        }
 
         $limit  = $this->number($params, 'limit', 1, $this->maxLimit, $this->defaultLimit, $errors);
         $offset = $this->number($params, 'offset', 0, self::MAX_OFFSET, 0, $errors);
@@ -82,6 +89,11 @@ readonly class PageQueryValidator
         $playerId = $params['player_id'];
 
         return new PageQuery($playerId, $from, $to, $limit ?? $this->defaultLimit, $offset ?? 0, $order === 'desc', $filters);
+    }
+
+    private function describeRange(int $seconds): string
+    {
+        return $seconds % 3600 === 0 ? ($seconds / 3600) . ' hours' : $seconds . ' seconds';
     }
 
     /**

@@ -23,6 +23,8 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use App\Modules\Auth\ApiKeyMiddleware;
 use App\Modules\ConnectLog\ConnectLogController;
+use App\Modules\ConnectLog\ConnectLogQueryController;
+use App\Modules\ConnectLog\ConnectLogRawQueryController;
 use App\Modules\EventLog\EventLogController;
 use App\Modules\EventLog\EventLogQueryController;
 use App\Modules\PlayLog\PlayLogController;
@@ -52,5 +54,7 @@ return function (App $app): void
         $group->post('/systemlog', [SystemLogController::class, 'ingest']);
         $group->get('/systemlog', [SystemLogQueryController::class, 'list']);
         $group->post('/connectlog', [ConnectLogController::class, 'ingest']);
+        $group->get('/connectlog', [ConnectLogQueryController::class, 'list']);
+        $group->get('/connectlog/raw', [ConnectLogRawQueryController::class, 'list']);
     })->add(ApiKeyMiddleware::class);
 };
