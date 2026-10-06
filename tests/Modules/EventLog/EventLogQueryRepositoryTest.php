@@ -30,9 +30,12 @@ use PHPUnit\Framework\TestCase;
 
 class EventLogQueryRepositoryTest extends TestCase
 {
-    private function query(bool $descending = true): PageQuery
+    /**
+     * @param array<string,string|list<string>> $filters
+     */
+    private function query(bool $descending = true, array $filters = []): PageQuery
     {
-        return new PageQuery('p\'1', new DateTimeImmutable('2026-10-01T00:00:00Z'), new DateTimeImmutable('2026-10-02T00:00:00Z'), 50, 100, $descending);
+        return new PageQuery('p\'1', new DateTimeImmutable('2026-10-01T00:00:00Z'), new DateTimeImmutable('2026-10-02T00:00:00Z'), 50, 100, $descending, $filters);
     }
 
     #[Group('units')]
@@ -98,5 +101,59 @@ class EventLogQueryRepositoryTest extends TestCase
         )->willReturn([]);
 
         static::assertSame([], new EventLogQueryRepository($client)->find($this->query(false)));
+    }
+
+    #[Group('units')]
+    public function testWithoutFiltersTheSqlHasNoFilterCondition(): void
+    {
+        $client = $this->createMock(ClickHouseClientInterface::class);
+        $client->expects($this->once())->method('select')->with(
+            static::logicalNot(static::logicalOr(
+                static::stringContains('event_type IN'),
+                static::stringContains('event_source ='),
+                static::stringContains('event_name =')
+            )),
+            static::anything()
+        )->willReturn([['total' => 0]]);
+
+        new EventLogQueryRepository($client)->count($this->query());
+    }
+
+    #[Group('units')]
+    public function testCountAppliesAllFiltersAsTypedParameters(): void
+    {
+        $client = $this->createMock(ClickHouseClientInterface::class);
+        $client->expects($this->once())->method('select')->with(
+            static::logicalAnd(
+                static::stringContains('AND event_type IN ({event_type_0:String}, {event_type_1:String})'),
+                static::stringContains('AND event_source = {event_source:String}'),
+                static::stringContains('AND event_name = {event_name:String}'),
+                static::logicalNot(static::stringContains('Content'))
+            ),
+            [
+                'player_id' => "p'1", 'from' => 1790812800, 'to' => 1790899200,
+                'event_type_0' => 'error', 'event_type_1' => 'fatal',
+                'event_source' => "Content'Manager", 'event_name' => 'FETCH_FAILED',
+            ]
+        )->willReturn([['total' => 2]]);
+
+        $filters = ['event_type' => ['error', 'fatal'], 'event_source' => "Content'Manager", 'event_name' => 'FETCH_FAILED'];
+
+        static::assertSame(2, new EventLogQueryRepository($client)->count($this->query(true, $filters)));
+    }
+
+    #[Group('units')]
+    public function testFindAppliesTheSameFiltersAsCount(): void
+    {
+        $client = $this->createMock(ClickHouseClientInterface::class);
+        $client->expects($this->once())->method('select')->with(
+            static::logicalAnd(
+                static::stringContains('AND event_type IN ({event_type_0:String})'),
+                static::stringContains('LIMIT {limit:UInt32} OFFSET {offset:UInt32}')
+            ),
+            ['player_id' => "p'1", 'from' => 1790812800, 'to' => 1790899200, 'event_type_0' => 'fatal', 'limit' => 50, 'offset' => 100]
+        )->willReturn([]);
+
+        static::assertSame([], new EventLogQueryRepository($client)->find($this->query(true, ['event_type' => ['fatal']])));
     }
 }

@@ -32,6 +32,9 @@ readonly class EventLogQueryRepository implements QueryRepositoryInterface
         AND event_time >= toDateTime({from:UInt32}, 'UTC')
         AND event_time < toDateTime({to:UInt32}, 'UTC')";
 
+    /** The optional filters that are a plain comparison with one value. */
+    private const array EQUALS = ['event_source', 'event_name'];
+
     public function __construct(private ClickHouseClientInterface $client) {}
 
     /**
@@ -39,7 +42,7 @@ readonly class EventLogQueryRepository implements QueryRepositoryInterface
      */
     public function count(PageQuery $query): int
     {
-        $rows = $this->client->select('SELECT count() AS total FROM event_log WHERE ' . self::FILTER, $this->filterParameters($query));
+        $rows = $this->client->select('SELECT count() AS total FROM event_log WHERE ' . $this->where($query), $this->filterParameters($query));
 
         return $this->toInt($rows[0]['total'] ?? 0);
     }
@@ -53,7 +56,7 @@ readonly class EventLogQueryRepository implements QueryRepositoryInterface
         $direction = $query->descending ? 'DESC' : 'ASC';
         $rows      = $this->client->select(
             'SELECT toUnixTimestamp(event_time) AS event_ts, toString(event_type) AS event_type, event_source, event_name, metadata
-             FROM event_log WHERE ' . self::FILTER . '
+             FROM event_log WHERE ' . $this->where($query) . '
              ORDER BY event_time ' . $direction . ', event_type ' . $direction . ', event_source ' . $direction . ', event_name ' . $direction . '
              LIMIT {limit:UInt32} OFFSET {offset:UInt32}',
             [...$this->filterParameters($query), 'limit' => $query->limit, 'offset' => $query->offset]
@@ -76,15 +79,52 @@ readonly class EventLogQueryRepository implements QueryRepositoryInterface
     }
 
     /**
+     * The condition of the player, the time range and the filters of the client. Only placeholders, the values
+     * are in filterParameters(). The severities are one placeholder each, so no array parameter is needed.
+     */
+    private function where(PageQuery $query): string
+    {
+        $sql = self::FILTER;
+
+        $types = $query->filters['event_type'] ?? [];
+        if (is_array($types) && $types !== [])
+        {
+            $placeholders = array_map(static fn(int $index): string => '{event_type_' . $index . ':String}', array_keys($types));
+            $sql         .= ' AND event_type IN (' . implode(', ', $placeholders) . ')';
+        }
+
+        foreach (self::EQUALS as $name)
+        {
+            if (isset($query->filters[$name]))
+                $sql .= ' AND ' . $name . ' = {' . $name . ':String}';
+        }
+
+        return $sql;
+    }
+
+    /**
      * @return array<string,int|string>
      */
     private function filterParameters(PageQuery $query): array
     {
-        return [
+        $parameters = [
             'player_id' => $query->playerId,
             'from'      => $query->from->getTimestamp(),
             'to'        => $query->to->getTimestamp(),
         ];
+
+        $types = $query->filters['event_type'] ?? [];
+        foreach (is_array($types) ? $types : [] as $index => $type)
+            $parameters['event_type_' . $index] = $type;
+
+        foreach (self::EQUALS as $name)
+        {
+            $value = $query->filters[$name] ?? null;
+            if (is_string($value))
+                $parameters[$name] = $value;
+        }
+
+        return $parameters;
     }
 
     private function toInt(mixed $value): int

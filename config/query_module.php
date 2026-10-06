@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 use App\Framework\Core\Config\Config;
 use App\Framework\Database\ClickHouseClientInterface;
+use App\Framework\Query\FilterValidatorInterface;
 use App\Framework\Query\PageQueryValidator;
 use App\Framework\Query\QueryController;
 use App\Framework\Query\QueryRepositoryInterface;
@@ -36,10 +37,11 @@ use Psr\Container\ContainerInterface;
  *   return $ingest + $define('playlog', PlayLogQueryController::class, PlayLogQueryRepository::class);
  *
  * $module is the name of the settings file config/settings/config_<module>.ini with default_limit and max_limit.
+ * A module with optional filter parameters passes the class of its FilterValidatorInterface as fourth argument.
  *
- * @return Closure(string, class-string<QueryController>, class-string<QueryRepositoryInterface>): array<string,mixed>
+ * @return Closure(string, class-string<QueryController>, class-string<QueryRepositoryInterface>, class-string<FilterValidatorInterface>|null=): array<string,mixed>
  */
-return function (string $module, string $controller, string $repository): array
+return function (string $module, string $controller, string $repository, ?string $filterValidator = null): array
 {
     $dependencies = [];
 
@@ -51,17 +53,21 @@ return function (string $module, string $controller, string $repository): array
         return new $repository($client);
     });
 
-    $dependencies[$controller] = DI\factory(function (ContainerInterface $container) use ($module, $controller, $repository)
+    $dependencies[$controller] = DI\factory(function (ContainerInterface $container) use ($module, $controller, $repository, $filterValidator)
     {
         /** @var Config $config */
         $config = $container->get(Config::class);
         /** @var QueryRepositoryInterface $repositoryInstance */
         $repositoryInstance = $container->get($repository);
 
+        /** @var FilterValidatorInterface|null $filters */
+        $filters = $filterValidator === null ? null : new $filterValidator(new FieldValidator());
+
         $validator = new PageQueryValidator(
             new FieldValidator(),
             (int) $config->getConfigValue('default_limit', $module),
-            (int) $config->getConfigValue('max_limit', $module)
+            (int) $config->getConfigValue('max_limit', $module),
+            $filters
         );
 
         return new $controller(new QueryService($validator, $repositoryInstance));

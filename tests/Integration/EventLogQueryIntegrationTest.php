@@ -178,4 +178,75 @@ class EventLogQueryIntegrationTest extends AppIntegrationTestCase
 
         static::assertSame(401, $this->handle($request)->getStatusCode());
     }
+
+    #[Group('integration')]
+    public function testMinTypeKeepsThisSeverityAndAbove(): void
+    {
+        $page = $this->page(['min_type' => 'warning']);
+
+        static::assertSame(['e4', 'e3', 'e2'], $this->names($page)); // fatal, error, warning, not informational
+        static::assertSame(3, $page['total']);
+    }
+
+    #[Group('integration')]
+    public function testEventTypeTakesAListOrASingleType(): void
+    {
+        static::assertSame(['e4', 'e3'], $this->names($this->page(['event_type' => 'error,fatal'])));
+        static::assertSame(['e1'], $this->names($this->page(['event_type' => 'informational'])));
+    }
+
+    #[Group('integration')]
+    public function testSourceAndNameMatchExactly(): void
+    {
+        static::assertSame(['e2'], $this->names($this->page(['event_source' => 'ContentManager'])));
+        static::assertSame([], $this->names($this->page(['event_source' => 'Content'])));
+        static::assertSame(['e3'], $this->names($this->page(['event_name' => 'e3'])));
+    }
+
+    #[Group('integration')]
+    public function testFiltersAreCombinedWithAndAndTheTotalCountsOnlyTheMatches(): void
+    {
+        $page = $this->page(['min_type' => 'warning', 'event_source' => 'src', 'limit' => '1']);
+
+        static::assertSame(['e4'], $this->names($page)); // e2 is a warning, but from another source
+        static::assertSame(2, $page['total']);           // e4 and e3
+
+        $next = $this->page(['min_type' => 'warning', 'event_source' => 'src', 'limit' => '1', 'offset' => '1']);
+        static::assertSame(['e3'], $this->names($next));
+        static::assertSame(2, $next['total']);
+    }
+
+    #[Group('integration')]
+    public function testFiltersStayInsideThePlayerAndTheTimeRange(): void
+    {
+        // p2 has a notice, "e5" (debug, exactly "to") is out of the range
+        static::assertSame([], $this->names($this->page(['event_type' => 'debug'])));
+        static::assertSame(['ex'], $this->names($this->page(['player_id' => 'p2', 'event_type' => 'notice'])));
+    }
+
+    #[Group('integration')]
+    public function testNothingMatchingIsAnEmptyPage(): void
+    {
+        static::assertSame(['total' => 0, 'limit' => 100, 'offset' => 0, 'items' => []], $this->page(['event_name' => 'nope']));
+    }
+
+    #[Group('integration')]
+    public function testInvalidFiltersGive422WithTheErrorsPerParameter(): void
+    {
+        $response = $this->get(['min_type' => 'loud', 'event_source' => '', 'event_name' => str_repeat('x', 129)]);
+
+        static::assertSame(422, $response->getStatusCode());
+        /** @var array{errors: array<string,string>} $data */
+        $data = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        static::assertSame(['min_type', 'event_source', 'event_name'], array_keys($data['errors']));
+    }
+
+    #[Group('integration')]
+    public function testMinTypeAndEventTypeTogetherGive422(): void
+    {
+        $response = $this->get(['min_type' => 'warning', 'event_type' => 'error']);
+
+        static::assertSame(422, $response->getStatusCode());
+        static::assertStringContainsString('cannot be combined with min_type', (string) $response->getBody());
+    }
 }

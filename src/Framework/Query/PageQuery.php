@@ -25,16 +25,21 @@ use DateTimeImmutable;
 
 /**
  * A validated query for the raw events of one player: a time range ($from included, $to excluded,
- * both UTC) and one page of the result.
+ * both UTC) and one page of the result. $filters are the optional, module specific conditions
+ * (name => value or list of values), empty if the client asked for none.
  */
 readonly class PageQuery
 {
+    /**
+     * @param array<string,string|list<string>> $filters
+     */
     public function __construct(
         public string            $playerId,
         public DateTimeImmutable $from,
         public DateTimeImmutable $to,
         public int               $limit,
         public int               $offset,
-        public bool              $descending
+        public bool              $descending,
+        public array             $filters = []
     ) {}
 }

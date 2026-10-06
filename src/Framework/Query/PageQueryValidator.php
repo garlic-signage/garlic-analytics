@@ -45,7 +45,8 @@ readonly class PageQueryValidator
     public function __construct(
         private FieldValidator $fields,
         private int            $defaultLimit,
-        private int            $maxLimit
+        private int            $maxLimit,
+        private ?FilterValidatorInterface $filterValidator = null
     ) {}
 
     /**
@@ -72,13 +73,15 @@ readonly class PageQueryValidator
         if ($order !== 'asc' && $order !== 'desc')
             $errors['order'] = 'must be asc or desc';
 
+        $filters = $this->filterValidator?->validate($params, $errors) ?? [];
+
         if ($errors !== [] || $from === null || $to === null)
             throw new ValidationException($errors);
 
         /** @var string $playerId */
         $playerId = $params['player_id'];
 
-        return new PageQuery($playerId, $from, $to, $limit ?? $this->defaultLimit, $offset ?? 0, $order === 'desc');
+        return new PageQuery($playerId, $from, $to, $limit ?? $this->defaultLimit, $offset ?? 0, $order === 'desc', $filters);
     }
 
     /**

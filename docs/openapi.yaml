@@ -189,7 +189,10 @@ paths:
         one transaction: if data arrives between them, `total` and the pages can differ by the new records.
 
         An unknown player is not an error, the answer is an empty page with `total` 0.
-        There is no filter by type or source yet. `metadata` is always an object, empty if the event had none.
+        The filters `min_type`, `event_type`, `event_source` and `event_name` are optional and combined with AND.
+        They apply to `total` as well, so it counts only the matching events. `event_source` and `event_name`
+        are compared exactly (case sensitive), there is no search for parts. `min_type` and `event_type`
+        cannot be used together (`422`). `metadata` is always an object, empty if the event had none.
       operationId: listEventLog
       security:
         - bearerAuth: []
@@ -215,6 +218,40 @@ paths:
             type: string
             enum: [asc, desc]
             default: desc
+        - name: min_type
+          in: query
+          required: false
+          description: |
+            Only events of this severity and above. The order is `debug` < `informational` < `notice` < `warning`
+            < `error` < `critical` < `fatal`, so `warning` returns `warning`, `error`, `critical` and `fatal`.
+            Not together with `event_type`.
+          schema:
+            $ref: '#/components/schemas/EventType'
+        - name: event_type
+          in: query
+          required: false
+          description: |
+            Only events of these severities, a comma separated list without blanks, e.g. `error,fatal`.
+            Not together with `min_type`.
+          schema:
+            type: string
+            examples: ['error,fatal']
+        - name: event_source
+          in: query
+          required: false
+          description: Only events of this source, exact match.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+        - name: event_name
+          in: query
+          required: false
+          description: Only events with this name, exact match.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
       responses:
         '200':
           description: One page of events.
@@ -603,6 +640,11 @@ components:
           items:
             $ref: '#/components/schemas/EventLogItem'
 
+    EventType:
+      type: string
+      enum: [debug, informational, notice, warning, error, critical, fatal]
+      description: Severity, ascending.
+
     EventLogItem:
       type: object
       required: [event_time, event_type, event_source, event_name, metadata]
@@ -612,8 +654,7 @@ components:
           description: UTC, with `Z`.
           examples: ['2026-10-03T13:30:27Z']
         event_type:
-          type: string
-          enum: [debug, informational, notice, warning, error, critical, fatal]
+          $ref: '#/components/schemas/EventType'
         event_source:
           type: string
         event_name:

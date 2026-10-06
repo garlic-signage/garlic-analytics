@@ -20,6 +20,7 @@
 declare(strict_types=1);
 
 use App\Modules\EventLog\EventLogController;
+use App\Modules\EventLog\EventLogFilterValidator;
 use App\Modules\EventLog\EventLogQueryController;
 use App\Modules\EventLog\EventLogQueryRepository;
 use App\Modules\EventLog\EventLogRepository;
@@ -28,8 +29,8 @@ use App\Modules\EventLog\EventLogValidator;
 
 /** @var Closure(string, string, string, string, string): array<string,mixed> $defineIngest */
 $defineIngest = require __DIR__ . '/../ingest_module.php';
-/** @var Closure(string, string, string): array<string,mixed> $defineQuery */
+/** @var Closure(string, string, string, string): array<string,mixed> $defineQuery */
 $defineQuery  = require __DIR__ . '/../query_module.php';
 
 return $defineIngest('eventlog', EventLogController::class, EventLogService::class, EventLogValidator::class, EventLogRepository::class)
-    + $defineQuery('eventlog', EventLogQueryController::class, EventLogQueryRepository::class);
+    + $defineQuery('eventlog', EventLogQueryController::class, EventLogQueryRepository::class, EventLogFilterValidator::class);

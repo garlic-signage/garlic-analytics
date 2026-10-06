@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace Tests\Framework\Query;
 
 use App\Framework\Exceptions\ValidationException;
+use App\Framework\Query\FilterValidatorInterface;
 use App\Framework\Query\PageQueryValidator;
 use App\Framework\Validation\FieldValidator;
 use DateTimeImmutable;
@@ -151,5 +152,50 @@ class PageQueryValidatorTest extends TestCase
     {
         static::assertSame(['order' => 'must be asc or desc'], $this->errorsOf($this->params(['order' => 'up'])));
         static::assertArrayHasKey('order', $this->errorsOf($this->params(['order' => 'ASC'])));
+    }
+
+    private function filterValidator(): FilterValidatorInterface
+    {
+        return new class implements FilterValidatorInterface
+        {
+            public function validate(array $params, array &$errors): array
+            {
+                if (isset($params['bad']))
+                    $errors['bad'] = 'is bad';
+
+                return isset($params['kind']) && is_string($params['kind']) ? ['kind' => $params['kind']] : [];
+            }
+        };
+    }
+
+    #[Group('units')]
+    public function testWithoutAFilterValidatorThereAreNoFilters(): void
+    {
+        static::assertSame([], $this->validator->validate($this->params(['kind' => 'x']))->filters);
+    }
+
+    #[Group('units')]
+    public function testFiltersOfTheModuleAreTaken(): void
+    {
+        $validator = new PageQueryValidator(new FieldValidator(), 100, 1000, $this->filterValidator());
+
+        static::assertSame(['kind' => 'x'], $validator->validate($this->params(['kind' => 'x']))->filters);
+        static::assertSame([], $validator->validate($this->params())->filters);
+    }
+
+    #[Group('units')]
+    public function testErrorsOfTheFiltersAreCollectedWithTheOthers(): void
+    {
+        $validator = new PageQueryValidator(new FieldValidator(), 100, 1000, $this->filterValidator());
+
+        try
+        {
+            $validator->validate($this->params(['bad' => '1', 'order' => 'up']));
+            static::fail('ValidationException expected');
+        }
+        catch (ValidationException $e)
+        {
+            static::assertSame(['order' => 'must be asc or desc', 'bad' => 'is bad'], $e->getErrors());
+        }
     }
 }
