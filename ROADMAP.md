@@ -29,7 +29,8 @@ Make the collected data usable.
 
 Read the other event types.
 
-- Read endpoints for ConnectLog (`connect_hourly`), EventLog and SystemLog (raw records with the same `Framework\Query` parts as the play log)
+- Raw events of a player in a time range, paginated: `GET /v1/eventlog` (done)
+- Read endpoints for ConnectLog (`connect_hourly`) and SystemLog (raw records with the same `Framework\Query` parts as the play log)
 - Aggregation by player group
 - Set the retention of `connect_log` back to 3 months when the migration of SmilControl is done
 

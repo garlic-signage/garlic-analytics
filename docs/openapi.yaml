@@ -102,24 +102,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: player_id
-          in: query
-          required: true
-          description: ID of the player.
-          schema:
-            $ref: '#/components/schemas/PlayerId'
-        - name: from
-          in: query
-          required: true
-          description: Start of the time range, included. Between 1970 and 2106.
-          schema:
-            $ref: '#/components/schemas/Timestamp'
-        - name: to
-          in: query
-          required: true
-          description: End of the time range, excluded. Must be after `from`.
-          schema:
-            $ref: '#/components/schemas/Timestamp'
+        - $ref: '#/components/parameters/QueryPlayerId'
+        - $ref: '#/components/parameters/QueryFrom'
+        - $ref: '#/components/parameters/QueryTo'
         - name: limit
           in: query
           required: false
@@ -129,15 +114,7 @@ paths:
             minimum: 1
             maximum: 1000
             default: 100
-        - name: offset
-          in: query
-          required: false
-          description: Number of records to skip.
-          schema:
-            type: integer
-            minimum: 0
-            maximum: 4294967295
-            default: 0
+        - $ref: '#/components/parameters/QueryOffset'
         - name: order
           in: query
           required: false
@@ -200,6 +177,68 @@ paths:
         '500': { $ref: '#/components/responses/ServerError' }
 
   /v1/eventlog:
+    get:
+      tags: [EventLog]
+      summary: List the events of a player
+      description: |
+        One page of the raw events of one player in a time range, with the number of all matching records
+        for the pagination. Needs the scope `read`.
+
+        An event belongs to the time range by its `event_time`: `from` is included, `to` is excluded.
+        The order follows `event_time` (then `event_type`, `event_source` and `event_name`). Two requests are not
+        one transaction: if data arrives between them, `total` and the pages can differ by the new records.
+
+        An unknown player is not an error, the answer is an empty page with `total` 0.
+        There is no filter by type or source yet. `metadata` is always an object, empty if the event had none.
+      operationId: listEventLog
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/QueryPlayerId'
+        - $ref: '#/components/parameters/QueryFrom'
+        - $ref: '#/components/parameters/QueryTo'
+        - name: limit
+          in: query
+          required: false
+          description: Number of records of the page (defaults and maximum are set in `config/settings/config_eventlog.ini`).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - $ref: '#/components/parameters/QueryOffset'
+        - name: order
+          in: query
+          required: false
+          description: Order by `event_time`, newest first by default.
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: One page of events.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventLogPage'
+              example:
+                total: 57
+                limit: 100
+                offset: 0
+                items:
+                  - event_time: '2026-10-03T13:30:27Z'
+                    event_type: warning
+                    event_source: ContentManager
+                    event_name: FETCH_FAILED
+                    metadata:
+                      resourceURI: https://example.com/a.jpg
+                      errorMessage: Host not found
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
     post:
       tags: [EventLog]
       summary: Ingest player events
@@ -323,6 +362,37 @@ components:
       schema:
         type: string
         const: gzip
+    QueryPlayerId:
+      name: player_id
+      in: query
+      required: true
+      description: ID of the player.
+      schema:
+        $ref: '#/components/schemas/PlayerId'
+    QueryFrom:
+      name: from
+      in: query
+      required: true
+      description: Start of the time range, included. Between 1970 and 2106.
+      schema:
+        $ref: '#/components/schemas/Timestamp'
+    QueryTo:
+      name: to
+      in: query
+      required: true
+      description: End of the time range, excluded. Must be after `from`.
+      schema:
+        $ref: '#/components/schemas/Timestamp'
+    QueryOffset:
+      name: offset
+      in: query
+      required: false
+      description: Number of records to skip.
+      schema:
+        type: integer
+        minimum: 0
+        maximum: 4294967295
+        default: 0
 
   securitySchemes:
     bearerAuth:
@@ -515,6 +585,44 @@ components:
           maxItems: 5000
           items:
             $ref: '#/components/schemas/EventLogEvent'
+
+    EventLogPage:
+      type: object
+      required: [total, limit, offset, items]
+      properties:
+        total:
+          type: integer
+          minimum: 0
+          description: Number of all records of the player in the time range.
+        limit:
+          type: integer
+        offset:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventLogItem'
+
+    EventLogItem:
+      type: object
+      required: [event_time, event_type, event_source, event_name, metadata]
+      properties:
+        event_time:
+          type: string
+          description: UTC, with `Z`.
+          examples: ['2026-10-03T13:30:27Z']
+        event_type:
+          type: string
+          enum: [debug, informational, notice, warning, error, critical, fatal]
+        event_source:
+          type: string
+        event_name:
+          type: string
+        metadata:
+          type: object
+          description: Empty if the event had none.
+          additionalProperties:
+            type: string
 
     EventLogEvent:
       type: object
