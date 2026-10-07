@@ -160,7 +160,7 @@ The sender of connects decides how to send them. One request with one entry work
 - Slim 4, PHP-DI
 - ClickHouse via its HTTP interface (`smi2/phpclickhouse`), no ORM
 - PHPUnit, PHPStan at the highest level with strict rules
-- Docker: official `clickhouse/clickhouse-server` image with a pinned version, API and collector containers based on FrankenPHP
+- Docker: official `clickhouse/clickhouse-server` image with a pinned version, API and collector containers from one PHP-FPM image (`Dockerfile`) behind Apache, like the apache-fpm web server of DDEV (see [docker.md](docker.md))
 
 ## Quality checks
 

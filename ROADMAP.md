@@ -44,7 +44,7 @@ Let players upload directly without a CMS in between.
 
 - Upload via WebDAV and HTTP PUT
 - Access management for player uploads, see [below](#upload-access-for-players)
-- Docker Compose with API, ClickHouse and the collector as optional profile
+- Docker Compose with API, ClickHouse and the collector as optional profile (done: `compose.yaml`, see `docs/docker.md`; the upload server is still missing)
 
 ## Later
 

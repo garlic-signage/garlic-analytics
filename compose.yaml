@@ -1,0 +1,108 @@
+# Garlic Analytics: API (Apache + PHP-FPM) and ClickHouse. The collector is optional: --profile collector.
+#
+# The settings come from a .env file next to this file, see docs/docker.md. Start:
+#   docker compose up -d
+#   docker compose exec -u www-data php php bin/console apikey:create cms --scope=read --scope=ingest   # -u www-data: the PHP processes must read the key file
+name: garlic-analytics
+
+x-php: &php
+  build: .
+  image: garlic-analytics:local
+  restart: unless-stopped
+  environment:
+    APP_ENV: prod
+    APP_DEBUG: "false"
+    APP_SECRET: ${APP_SECRET:?APP_SECRET is not set, a random string of 32 characters}
+    CLICKHOUSE_HOST: clickhouse
+    CLICKHOUSE_PORT: "8123"
+    CLICKHOUSE_USER: ${CLICKHOUSE_USER:-analytics}
+    CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:?CLICKHOUSE_PASSWORD is not set}
+    CLICKHOUSE_DATABASE: ${CLICKHOUSE_DATABASE:-analytics}
+    MAX_BODY_BYTES: ${MAX_BODY_BYTES:-8388608}
+  volumes:
+    - analytics-var:/var/www/html/var
+
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.8
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_DB: ${CLICKHOUSE_DATABASE:-analytics}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-analytics}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:?CLICKHOUSE_PASSWORD is not set}
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:8123/ping || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    # not published: only the containers of this project reach ClickHouse
+    expose:
+      - "8123"
+
+  # Applies the schema files, on every start (they are idempotent), then exits.
+  migrate:
+    <<: *php
+    restart: "no"
+    user: www-data
+    command: ["php", "bin/console", "db:migrate"]
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+
+  php:
+    <<: *php
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  web:
+    image: httpd:2.4-alpine
+    restart: unless-stopped
+    # The API is not public: only the CMS and the collector use it. Put a reverse proxy with TLS in front of it,
+    # or set API_BIND (e.g. 0.0.0.0:8070) if the CMS is on another host.
+    ports:
+      - "${API_BIND:-127.0.0.1:8070}:80"
+    volumes:
+      - ./docker/apache/httpd.conf:/usr/local/apache2/conf/httpd.conf:ro
+    depends_on:
+      php:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Reads the files that devices uploaded to the volume and sends them to the API, every COLLECTOR_INTERVAL seconds.
+  # Needs an API key with the scope ingest in COLLECTOR_API_KEY (php bin/console apikey:create collector --scope=ingest).
+  collector:
+    <<: *php
+    profiles: ["collector"]
+    user: www-data
+    init: true
+    environment:
+      APP_ENV: prod
+      APP_DEBUG: "false"
+      APP_SECRET: ${APP_SECRET:?APP_SECRET is not set, a random string of 32 characters}
+      COLLECTOR_API_URL: http://web
+      COLLECTOR_API_KEY: ${COLLECTOR_API_KEY:-}
+      COLLECTOR_INTERVAL: ${COLLECTOR_INTERVAL:-60}
+    command:
+      - sh
+      - -c
+      - while true; do php bin/console collector:run; sleep "$${COLLECTOR_INTERVAL:-60}"; done
+    depends_on:
+      web:
+        condition: service_healthy
+
+volumes:
+  clickhouse-data:
+  analytics-var:

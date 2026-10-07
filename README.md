@@ -60,7 +60,7 @@ ddev exec bin/console db:migrate
 ddev exec bin/console apikey:create my-cms --scope=ingest --scope=read
 ```
 
-The key is shown once. Without DDEV run the same commands directly and point the `CLICKHOUSE_*` settings of `.env` to your ClickHouse.
+The key is shown once. For operation use Docker Compose, see [docs/docker.md](docs/docker.md). Without Docker and DDEV run the same commands directly and point the `CLICKHOUSE_*` settings of `.env` to your ClickHouse.
 
 Run the checks:
 
@@ -77,6 +77,7 @@ All three must be green. The same checks run on GitHub after every push. Details
 - [docs/architecture.md](docs/architecture.md): how the application is put together and how a request runs through it
 - [docs/openapi.yaml](docs/openapi.yaml): the API (OpenAPI 3.1), formats and rules of all endpoints
 - [docs/cli.md](docs/cli.md): administration commands (`bin/console`), migrations and API keys
+- [docs/docker.md](docs/docker.md): operation with Docker Compose (API, ClickHouse and the optional collector)
 - [CONTRIBUTING.md](CONTRIBUTING.md): setup, checks and conventions for contributors
 
 ## License
